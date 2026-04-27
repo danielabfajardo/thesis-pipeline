@@ -25,15 +25,15 @@ log = logging.getLogger(__name__)
 SEVERITY_SCORE = {"BLOCKER": 5, "CRITICAL": 4, "MAJOR": 3, "MINOR": 2, "INFO": 1}
 TYPE_WEIGHT = {"BUG": 3, "VULNERABILITY": 2, "CODE_SMELL": 1}
 
-MEASURE_KEYS = (
+# SonarQube's component_tree endpoint rejects requests with more than ~15 metric keys
+# in a single call. Split into two fixed groups that each stay under the limit.
+MEASURE_KEYS_A = (
     "bugs,vulnerabilities,code_smells,violations,"
     "blocker_violations,critical_violations,major_violations,minor_violations,info_violations,"
-    "complexity,cognitive_complexity,functions,statements,"
-    "duplicated_lines_density,duplicated_blocks,duplicated_lines,"
-    "sqale_index,sqale_debt_ratio,"
-    "coverage,line_coverage,branch_coverage,uncovered_lines,"
-    "lines,ncloc,classes,"
-    "reliability_rating,security_rating,sqale_rating"
+    "complexity,cognitive_complexity,functions,duplicated_lines_density,sqale_index,sqale_debt_ratio"
+)
+MEASURE_KEYS_B = (
+    "coverage,lines,reliability_rating,security_rating,sqale_rating"
 )
 
 RATING_MAP = {"1": "A", "2": "B", "3": "C", "4": "D", "5": "E"}
@@ -112,71 +112,56 @@ class SonarQubeExtractor:
         log.info(f"Total issues fetched: {len(df)}")
         return df
 
-    def _fetch_measures_page(self, metric_keys: str, page: int) -> dict:
-        """Single page fetch. SonarQube returns 400 when the full metric list makes
-        the URL too long, so callers split metrics into batches of ~14."""
-        return self._get("/api/measures/component_tree", {
-            "component": self.project_key,
-            "metricKeys": metric_keys,
-            "strategy": "leaves",
-            "ps": 100,
-            "p": page,
-        })
-
-    def _parse_components(self, components: list) -> dict[str, dict]:
-        """Convert component list to {file_path: {metric: value}} dict."""
-        result = {}
-        for comp in components:
-            if comp.get("qualifier") != "FIL":
-                continue
-            fp = self._extract_file_path(comp.get("key", ""))
-            row = result.setdefault(fp, {"file_path": fp})
-            for m in comp.get("measures", []):
-                key = m["metric"]
-                val = m.get("value", "0") or "0"
-                if key in ("reliability_rating", "security_rating", "sqale_rating"):
-                    row[key] = RATING_MAP.get(val, val)
-                else:
-                    try:
-                        row[key] = float(val)
-                    except (ValueError, TypeError):
-                        row[key] = val
+    def _fetch_measures_for_keys(self, metric_keys: str) -> dict[str, dict]:
+        """Fetch all pages for a given set of metric keys, return {file_path: {metric: value}}."""
+        result: dict[str, dict] = {}
+        page = 1
+        while True:
+            data = self._get("/api/measures/component_tree", {
+                "component": self.project_key,
+                "metricKeys": metric_keys,
+                "strategy": "leaves",
+                "ps": 500,
+                "p": page,
+            })
+            for comp in data.get("components", []):
+                if comp.get("qualifier") != "FIL":
+                    continue
+                fp = self._extract_file_path(comp.get("key", ""))
+                row = result.setdefault(fp, {"file_path": fp})
+                for m in comp.get("measures", []):
+                    key = m["metric"]
+                    val = m.get("value", "0") or "0"
+                    if key in ("reliability_rating", "security_rating", "sqale_rating"):
+                        row[key] = RATING_MAP.get(val, val)
+                    else:
+                        try:
+                            row[key] = float(val)
+                        except (ValueError, TypeError):
+                            row[key] = val
+            paging = data.get("paging", {})
+            total = paging.get("total", 0)
+            fetched = page * 500
+            log.info(f"  Measures page {page}: fetched {min(fetched, total)}/{total} files")
+            if fetched >= total:
+                break
+            page += 1
         return result
 
     def fetch_measures(self) -> pd.DataFrame:
         log.info("Fetching file-level measures from SonarQube...")
-
-        # Split metric keys into batches to avoid SonarQube's URL length limit
-        all_keys = [k.strip() for k in MEASURE_KEYS.split(",") if k.strip()]
-        batch_size = 14
-        key_batches = [",".join(all_keys[i:i + batch_size]) for i in range(0, len(all_keys), batch_size)]
-
-        merged: dict[str, dict] = {}
-
-        for batch_idx, batch_keys in enumerate(key_batches):
-            page = 1
-            while True:
-                data = self._fetch_measures_page(batch_keys, page)
-                batch_rows = self._parse_components(data.get("components", []))
-                for fp, row in batch_rows.items():
-                    merged.setdefault(fp, {"file_path": fp}).update(row)
-
-                paging = data.get("paging", {})
-                total = paging.get("total", 0)
-                fetched = page * 100
-                if batch_idx == 0:
-                    log.info(f"  Measures page {page}: fetched {min(fetched, total)}/{total} files")
-                if fetched >= total:
-                    break
-                page += 1
+        # Two calls because SonarQube rejects more than ~15 metric keys per request
+        merged = self._fetch_measures_for_keys(MEASURE_KEYS_A)
+        for fp, row in self._fetch_measures_for_keys(MEASURE_KEYS_B).items():
+            merged.setdefault(fp, {"file_path": fp}).update(row)
 
         df = pd.DataFrame(list(merged.values()))
         if df.empty:
             return df
-        numeric_cols = [c for c in df.columns if c not in ("file_path", "reliability_rating", "security_rating", "sqale_rating")]
-        for col in numeric_cols:
-            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
-
+        rating_cols = {"reliability_rating", "security_rating", "sqale_rating"}
+        for col in df.columns:
+            if col not in ("file_path",) | rating_cols:
+                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
         log.info(f"Total files with measures: {len(df)}")
         return df
 
@@ -197,10 +182,14 @@ class SonarQubeExtractor:
         issues.to_csv(self.results_path / "sonarqube_issues.csv", index=False)
         log.info(f"sonarqube_issues.csv written: {len(issues)} rows")
 
-        measures = self.fetch_measures()
-        measures.to_csv(self.results_path / "sonarqube_measures.csv", index=False)
-        log.info(f"sonarqube_measures.csv written: {len(measures)} rows")
+        try:
+            measures = self.fetch_measures()
+            measures.to_csv(self.results_path / "sonarqube_measures.csv", index=False)
+            log.info(f"sonarqube_measures.csv written: {len(measures)} rows")
+        except Exception as e:
+            log.error(f"Measures fetch failed: {e} — continuing without file-level metrics")
 
+        # C1 ranking is built from issues alone; always written even if measures failed
         ranking_c1 = self.build_c1_ranking(issues)
         ranking_c1.to_csv(self.results_path / "ranking_c1.csv", index=False)
         log.info(f"ranking_c1.csv written: {len(ranking_c1)} rows")

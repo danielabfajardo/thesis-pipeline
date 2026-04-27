@@ -24,6 +24,6 @@ defaults:
     batch_size: 500
 
   ui:
-    port: 5000
+    port: 5001
     randomise_list_order: true
     show_list_labels: false
