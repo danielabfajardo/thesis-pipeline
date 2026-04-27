@@ -1,0 +1,22 @@
+project_id: "commons-lang"
+project_display_name: "Apache Commons Lang"
+
+time_period:
+  start_date: "2023-01-01"
+  end_date: "2024-01-01"
+
+sonarqube:
+  host: "http://localhost:9000"
+  project_key: "commons-lang"
+  token: ""
+
+github:
+  repo_owner: "apache"
+  repo_name: "commons-lang"
+  branch: "master"
+
+components:
+  run_sonarqube: true
+  run_github_churn: true
+  run_satd: true
+  run_llm_ranking: true

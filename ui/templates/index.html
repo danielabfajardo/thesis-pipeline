@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Select Project{% endblock %}
+{% block content %}
+<div class="project-selector">
+  <h2>Select a project</h2>
+  <ul class="project-list">
+    {% for pid in projects %}
+    <li>
+      <a href="{{ url_for('issues', project_id=pid) }}" class="project-link">{{ pid }}</a>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

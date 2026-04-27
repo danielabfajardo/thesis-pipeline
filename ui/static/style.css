@@ -1,0 +1,273 @@
+/* ============================================================
+   Thesis pipeline — neutral interview UI
+   No external dependencies; works fully offline.
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --color-bg: #f3f4f6;
+  --color-surface: #ffffff;
+  --color-border: #e5e7eb;
+  --color-text: #1f2937;
+  --color-text-muted: #6b7280;
+  --color-accent: #1d4ed8;
+  --color-tab-active: #1d4ed8;
+
+  --sev-blocker-fill: #d4333f;
+  --sev-critical: #d4333f;
+  --sev-major: #ed7d20;
+  --sev-minor: #eabe06;
+  --sev-info: #b0b0b0;
+
+  --row-expand-bg: #f8fafc;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ---- Header ---- */
+.app-header {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.header-logo {
+  font-weight: 600;
+  font-size: 15px;
+}
+.header-project {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+/* ---- Main ---- */
+.app-main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* ---- Project selector ---- */
+.project-selector { padding: 32px; }
+.project-selector h2 { margin-bottom: 16px; font-size: 18px; }
+.project-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.project-link {
+  display: inline-block;
+  padding: 8px 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  text-decoration: none;
+  color: var(--color-accent);
+  font-weight: 500;
+}
+.project-link:hover { background: #eff6ff; }
+
+/* ---- Filter bar ---- */
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.filter-select {
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* ---- Tabs ---- */
+.tabs-container {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.tabs-nav {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  background: #f9fafb;
+}
+.tab-btn {
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.15s;
+}
+.tab-btn:hover { color: var(--color-text); }
+.tab-btn.active {
+  color: var(--color-tab-active);
+  border-bottom-color: var(--color-tab-active);
+  background: var(--color-surface);
+}
+.issue-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 6px;
+  background: var(--color-border);
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.tab-btn.active .issue-count {
+  background: #dbeafe;
+  color: var(--color-tab-active);
+}
+
+/* ---- Tab panels ---- */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+.loading-indicator {
+  padding: 32px;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+/* ---- Issues table ---- */
+.issues-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.issues-table thead th {
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--color-border);
+  background: #f9fafb;
+  white-space: nowrap;
+}
+
+.col-severity { width: 36px; }
+.col-type     { width: 36px; }
+.col-message  { width: auto; }
+.col-file     { width: 180px; }
+.col-line     { width: 60px; }
+.col-effort   { width: 70px; }
+.col-age      { width: 70px; }
+
+.issues-table tbody tr {
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.issues-table tbody tr:hover { background: #f8fafc; }
+.issues-table tbody tr.expanded { background: #f0f7ff; }
+.issues-table tbody td {
+  padding: 10px 12px;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.issues-table tbody td.col-message { white-space: normal; }
+
+/* ---- Severity indicators ---- */
+.sev-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.sev-BLOCKER  { background: var(--sev-blocker-fill); }
+.sev-CRITICAL { background: transparent; border: 2px solid var(--sev-critical); }
+.sev-MAJOR    { background: var(--sev-major); }
+.sev-MINOR    { background: var(--sev-minor); }
+.sev-INFO     { background: var(--sev-info); }
+
+/* ---- Type icons (inline SVG via CSS mask) ---- */
+.type-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+}
+.type-icon svg { width: 16px; height: 16px; }
+
+/* ---- Expanded row ---- */
+.expand-row td {
+  padding: 0 !important;
+  cursor: default;
+}
+.expand-row:hover { background: var(--color-surface) !important; }
+.expand-content {
+  padding: 16px 20px 16px 60px;
+  background: var(--row-expand-bg);
+  border-top: 1px solid var(--color-border);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 32px;
+}
+.expand-section { display: flex; flex-direction: column; gap: 6px; }
+.expand-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.expand-value {
+  font-size: 13px;
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  word-break: break-word;
+}
+.expand-reasoning {
+  grid-column: 1 / -1;
+}
+.expand-reasoning .expand-value {
+  font-family: inherit;
+  font-style: italic;
+  color: #374151;
+}
+.expand-metrics {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.metric-chip {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+.metric-chip strong { color: var(--color-text); }

@@ -1,0 +1,29 @@
+defaults:
+  time_period:
+    start_date: "2023-01-01"
+    end_date: "2024-01-01"
+
+  components:
+    run_sonarqube: true
+    run_github_churn: true
+    run_satd: true
+    run_llm_ranking: true
+
+  sonarqube:
+    host: "http://localhost:9000"
+    max_issues: 500
+
+  github:
+    branch: "master"
+
+  llm:
+    model: "claude-sonnet-4-6"
+    temperature: 0
+    max_tokens: 32000
+    single_prompt_issue_limit: 800
+    batch_size: 500
+
+  ui:
+    port: 5000
+    randomise_list_order: true
+    show_list_labels: false

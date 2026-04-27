@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Issues — {{ project_id }}{% endblock %}
+
+{% block header_extra %}
+<span class="header-project">{{ project_id }}</span>
+{% endblock %}
+
+{% block content %}
+{{ rotation_comment | safe }}
+
+<div class="filter-bar">
+  <select class="filter-select" disabled>
+    <option>Type</option>
+    <option>Bug</option>
+    <option>Vulnerability</option>
+    <option>Code Smell</option>
+  </select>
+  <select class="filter-select" disabled>
+    <option>Severity</option>
+    <option>Blocker</option>
+    <option>Critical</option>
+    <option>Major</option>
+    <option>Minor</option>
+    <option>Info</option>
+  </select>
+  <select class="filter-select" disabled>
+    <option>Status</option>
+    <option>Open</option>
+    <option>Confirmed</option>
+    <option>Reopened</option>
+  </select>
+</div>
+
+<div class="tabs-container">
+  <div class="tabs-nav" role="tablist">
+    {% for cond, label in ordered_lists %}
+    <button
+      class="tab-btn {% if loop.first %}active{% endif %}"
+      role="tab"
+      aria-selected="{{ 'true' if loop.first else 'false' }}"
+      aria-controls="panel-{{ cond }}"
+      data-condition="{{ cond }}"
+      id="tab-{{ cond }}"
+    >
+      {{ label }}
+      <span class="issue-count" id="count-{{ cond }}">{{ counts[cond] }}</span>
+    </button>
+    {% endfor %}
+  </div>
+
+  {% for cond, label in ordered_lists %}
+  <div
+    class="tab-panel {% if loop.first %}active{% endif %}"
+    role="tabpanel"
+    id="panel-{{ cond }}"
+    aria-labelledby="tab-{{ cond }}"
+    data-condition="{{ cond }}"
+  >
+    <div class="loading-indicator" id="loading-{{ cond }}">Loading...</div>
+    <table class="issues-table" id="table-{{ cond }}" style="display:none;">
+      <thead>
+        <tr>
+          <th class="col-severity" aria-label="Severity"></th>
+          <th class="col-type" aria-label="Type"></th>
+          <th class="col-message">Message</th>
+          <th class="col-file">File</th>
+          <th class="col-line">Line</th>
+          <th class="col-effort">Effort</th>
+          <th class="col-age">Age</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-{{ cond }}"></tbody>
+    </table>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+  window.PIPELINE_CONFIG = {
+    projectId: {{ project_id | tojson }},
+    rotation: {{ rotation | tojson }},
+  };
+</script>
+{% endblock %}
