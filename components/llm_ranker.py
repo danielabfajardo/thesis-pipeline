@@ -27,8 +27,15 @@ import pandas as pd
 
 log = logging.getLogger(__name__)
 
-SEVERITY_SCORE = {"BLOCKER": 5, "CRITICAL": 4, "MAJOR": 3, "MINOR": 2, "INFO": 1}
-VALID_SEVERITIES = {"BLOCKER", "CRITICAL", "MAJOR", "MINOR", "INFO"}
+# SonarQube 10.x impact-based severity model uses three levels: HIGH, MEDIUM, LOW.
+# LLM output uses this vocabulary (not the legacy five-level BLOCKER/CRITICAL/MAJOR/MINOR/INFO).
+# This ensures visual consistency across C1, C2, and C3 conditions in the interview UI:
+# C1 displays SonarQube's native HIGH/MEDIUM/LOW labels; C2 and C3 must use the same
+# vocabulary to isolate the effect of ordering from label presentation differences.
+# Interview participants evaluate all three conditions side by side, so mismatched
+# vocabulary would be an artifact, not a methodological signal. See RQ2:Actionability.
+SEVERITY_SCORE = {"HIGH": 3, "MEDIUM": 2, "LOW": 1}
+VALID_SEVERITIES = {"HIGH", "MEDIUM", "LOW"}
 VALID_TYPES = {"BUG", "VULNERABILITY", "CODE_SMELL"}
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
@@ -41,15 +48,28 @@ class LLMRanker:
         llm = config.get("llm", {})
         self.model = llm.get("model", "claude-sonnet-4-6")
         self.max_tokens = llm.get("max_tokens", 8192)
-        self.single_prompt_limit = llm.get("single_prompt_issue_limit", 800)
-        self.batch_size = llm.get("batch_size", 50)
+        # THESIS DESIGN: Batching is NOT permitted. Single prompt per condition per repository.
+        # The 200-alert pool (externally controlled) is the mechanism that prevents
+        # oversized prompts. No per-pipeline alert limit is needed.
         self.client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
 
     def _load_prompt_template(self, condition: str) -> str:
         path = PROMPTS_DIR / f"system_prompt_{condition}.txt"
         return path.read_text()
 
+    @staticmethod
+    def _coverage_or_null(row: pd.Series):
+        """Return coverage as float if configured, None if not (SonarQube returns 0 for both
+        'genuinely 0% covered' and 'coverage analysis not set up' — we treat 0 as null
+        to avoid the LLM misinterpreting missing data as a quality signal)."""
+        cov = float(row.get("coverage", 0) or 0)
+        lines = float(row.get("lines", 0) or 0)
+        return round(cov, 1) if cov > 0 or lines == 0 else None
+
     def _build_c2_issue(self, row: pd.Series) -> dict:
+        # THESIS DESIGN: C2 issue JSON excludes impact_severity and impact_quality.
+        # The LLM ranks based on SonarQube severity only (not impact-based fields).
+        # This avoids anchoring bias from the combined impact model.
         return {
             "issue_key": str(row.get("issue_key", "")),
             "file": str(row.get("file", "")),
@@ -63,11 +83,9 @@ class LLMRanker:
             "file_vulnerabilities": int(row.get("vulnerabilities", 0) or 0),
             "file_code_smells": int(row.get("code_smells", 0) or 0),
             "file_violations": int(row.get("violations", 0) or 0),
-            "file_critical_violations": int(row.get("critical_violations", 0) or 0),
-            "file_major_violations": int(row.get("major_violations", 0) or 0),
             "file_complexity": int(row.get("complexity", 0) or 0),
             "file_cognitive_complexity": int(row.get("cognitive_complexity", 0) or 0),
-            "file_coverage": round(float(row.get("coverage", 0) or 0), 1),
+            "file_coverage": self._coverage_or_null(row),
             "file_sqale_index": int(row.get("sqale_index", 0) or 0),
             "file_reliability_rating": str(row.get("reliability_rating", "") or ""),
             "file_security_rating": str(row.get("security_rating", "") or ""),
@@ -75,6 +93,10 @@ class LLMRanker:
 
     def _build_c3_issue(self, row: pd.Series) -> dict:
         obj = self._build_c2_issue(row)
+        lld = row.get("line_last_modified_days")
+        satd_count = row.get("satd_count")
+        satd_age_days = row.get("satd_age_days")
+        satd_change_count = row.get("satd_change_count")
         obj.update({
             "file_commit_count": int(row.get("commit_count", 0) or 0),
             "file_unique_authors": int(row.get("unique_authors", 0) or 0),
@@ -82,10 +104,11 @@ class LLMRanker:
             "file_churn": int(row.get("churn", 0) or 0),
             "file_days_since_modified": int(row.get("days_since_modified", 0) or 0),
             "file_age_days": int(row.get("file_age_days", 0) or 0),
-            "file_satd_count": int(row.get("satd_count", 0) or 0),
+            "file_satd_count": int(satd_count) if pd.notna(satd_count) else None,
             "file_satd_text": str(row.get("satd_text", "") or ""),
-            "file_has_defect_satd": bool(row.get("has_defect_satd", False)),
-            "file_has_design_satd": bool(row.get("has_design_satd", False)),
+            "file_satd_age_days": int(satd_age_days) if pd.notna(satd_age_days) else None,
+            "file_satd_change_count": int(satd_change_count) if pd.notna(satd_change_count) else None,
+            "line_last_modified_days": int(lld) if pd.notna(lld) else None,
         })
         return obj
 
@@ -109,6 +132,9 @@ class LLMRanker:
         cleaned = re.sub(r"\s*```$", "", cleaned.strip(), flags=re.MULTILINE)
         cleaned = cleaned.strip()
 
+        # Fallback mapping: converts any severity value from CSV (legacy or 10.x) to three-level LLM output vocabulary
+        severity_fallback_map = {"BLOCKER": "HIGH", "CRITICAL": "HIGH", "MAJOR": "MEDIUM", "MINOR": "LOW", "INFO": "LOW", "HIGH": "HIGH", "MEDIUM": "MEDIUM", "LOW": "LOW"}
+
         try:
             parsed = json.loads(cleaned)
             if not isinstance(parsed, list):
@@ -118,9 +144,10 @@ class LLMRanker:
                 severity = item.get("llm_severity", "").upper()
                 issue_type = item.get("llm_type", "").upper()
                 if severity not in VALID_SEVERITIES:
-                    severity = fallback_df.loc[
+                    fb_sev = fallback_df.loc[
                         fallback_df["issue_key"] == item.get("issue_key"), "severity"
                     ].values[0] if item.get("issue_key") in fallback_df["issue_key"].values else "MAJOR"
+                    severity = severity_fallback_map.get(str(fb_sev).upper(), "MEDIUM")
                 if issue_type not in VALID_TYPES:
                     issue_type = fallback_df.loc[
                         fallback_df["issue_key"] == item.get("issue_key"), "type"
@@ -129,19 +156,22 @@ class LLMRanker:
                     "issue_key": item.get("issue_key", ""),
                     "llm_severity": severity,
                     "llm_type": issue_type,
-                    "llm_priority_score": SEVERITY_SCORE.get(severity, 3),
+                    "llm_priority_score": SEVERITY_SCORE.get(severity, 2),
                     "llm_reasoning": item.get("llm_reasoning", ""),
                 })
             return validated
         except Exception as e:
             log.error(f"JSON parse failure ({condition}): {e}")
             log.error(f"Raw response (first 500 chars): {raw[:500]}")
+            severity_fallback_map = {"BLOCKER": "HIGH", "CRITICAL": "HIGH", "MAJOR": "MEDIUM", "MINOR": "LOW", "INFO": "LOW", "HIGH": "HIGH", "MEDIUM": "MEDIUM", "LOW": "LOW"}
             return [
                 {
                     "issue_key": str(row["issue_key"]),
-                    "llm_severity": str(row["severity"]),
-                    "llm_type": str(row["type"]),
-                    "llm_priority_score": SEVERITY_SCORE.get(str(row["severity"]), 3),
+                    "llm_severity": severity_fallback_map.get(str(row.get("severity", "MAJOR")).upper(), "MEDIUM"),
+                    "llm_type": str(row.get("type", "CODE_SMELL")),
+                    "llm_priority_score": SEVERITY_SCORE.get(
+                        severity_fallback_map.get(str(row.get("severity", "MAJOR")).upper(), "MEDIUM"), 2
+                    ),
                     "llm_reasoning": "",
                 }
                 for _, row in fallback_df.iterrows()
@@ -156,15 +186,7 @@ class LLMRanker:
         raw = self._call_api(json.dumps(issue_list, ensure_ascii=False), condition)
         return self._parse_response(raw, issues, condition)
 
-    def _call_batched(self, issues: pd.DataFrame, condition: str) -> list[dict]:
-        log.warning(f"Batching active ({condition}): {len(issues)} issues, batch_size={self.batch_size}")
-        all_results = []
-        for start in range(0, len(issues), self.batch_size):
-            batch = issues.iloc[start:start + self.batch_size]
-            log.info(f"  Batch {start // self.batch_size + 1}: issues {start+1}-{start+len(batch)}")
-            results = self._call_single(batch, condition)
-            all_results.extend(results)
-        return all_results
+
 
     def _rank_and_save(self, enriched: pd.DataFrame, llm_results: list[dict], condition: str) -> None:
         llm_df = pd.DataFrame(llm_results)
@@ -207,12 +229,12 @@ class LLMRanker:
         enriched = pd.read_csv(enriched_path)
         log.info(f"LLM ranker: {len(enriched)} issues loaded from enriched_issues.csv")
 
-        use_batching = len(enriched) > self.single_prompt_limit
+        # THESIS DESIGN: Single prompt per condition per repository (no batching).
+        # Batching would introduce seam artifacts and violate holistic ranking design.
+        # The alert pool size is externally controlled (e.g., 200-alert cap); failures
+        # upstream prevent oversized inputs here.
 
         for condition in ("c2", "c3"):
             log.info(f"--- Condition {condition.upper()} ---")
-            if use_batching:
-                results = self._call_batched(enriched, condition)
-            else:
-                results = self._call_single(enriched, condition)
+            results = self._call_single(enriched, condition)
             self._rank_and_save(enriched, results, condition)

@@ -9,26 +9,19 @@
 {{ rotation_comment | safe }}
 
 <div class="filter-bar">
-  <select class="filter-select" disabled>
-    <option>Type</option>
-    <option>Bug</option>
-    <option>Vulnerability</option>
-    <option>Code Smell</option>
+  <select class="filter-select" id="filter-quality">
+    <option value="">Software Quality</option>
+    <option value="SECURITY">Security</option>
+    <option value="RELIABILITY">Reliability</option>
+    <option value="MAINTAINABILITY">Maintainability</option>
   </select>
-  <select class="filter-select" disabled>
-    <option>Severity</option>
-    <option>Blocker</option>
-    <option>Critical</option>
-    <option>Major</option>
-    <option>Minor</option>
-    <option>Info</option>
+  <select class="filter-select" id="filter-severity">
+    <option value="">Severity</option>
+    <option value="HIGH">High</option>
+    <option value="MEDIUM">Medium</option>
+    <option value="LOW">Low</option>
   </select>
-  <select class="filter-select" disabled>
-    <option>Status</option>
-    <option>Open</option>
-    <option>Confirmed</option>
-    <option>Reopened</option>
-  </select>
+  <button class="filter-reset" id="filter-reset" style="display:none">Clear filters</button>
 </div>
 
 <div class="tabs-container">
@@ -61,7 +54,7 @@
       <thead>
         <tr>
           <th class="col-severity" aria-label="Severity"></th>
-          <th class="col-type" aria-label="Type"></th>
+          <th class="col-quality" aria-label="Software Quality"></th>
           <th class="col-message">Message</th>
           <th class="col-file">File</th>
           <th class="col-line">Line</th>

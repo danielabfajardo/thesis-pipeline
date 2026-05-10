@@ -1,28 +1,30 @@
 """
 Extracts self-admitted technical debt comments for each source file.
 
-Input:  Project config (GitHub repo, time_period), sonarqube_issues.csv (file list)
+Input:  Project config (GitHub repo, language), sonarqube_issues.csv (file list)
 Output: results/{project_id}/satd_comments.csv
         results/{project_id}/satd_method.txt
 
 Detection strategy (tried in order):
-1. satd_detector.jar ML classifier (tools/satd_detector.jar) via stdin — most accurate,
-   no MySQL or Docker needed, just Java and the JAR.
-2. SATDBailiff Docker image — if Docker is available and the image can be pulled.
-3. SATDBailiff full JAR + MySQL — if tools/SATDBailiff.jar and MySQL are configured.
-4. Keyword-based via GitHub API — built-in fallback requiring only a GitHub token.
-5. Empty CSV — if no method is available.
+1. SATDBailiff (Docker + JGit + MySQL) — Java repositories only. Mines full git history
+   with lifecycle tracking (additions, removals, modifications). Requires Java 11+, Docker,
+   and mysql-connector-python. The SATDBailiff JAR is downloaded automatically on first run.
+   Produces schema: file_path, satd_count, satd_text, satd_types, satd_age_days, satd_change_count.
+
+2. satd_detector.jar ML classifier — Binary SATD presence classifier. Fetches file contents
+   via GitHub API and batches all comments through the ML model. Requires Java and the
+   satd_detector.jar in tools/. Produces schema: file_path, satd_count, satd_text.
+
+3. Empty CSV — If neither SATDBailiff nor the ML classifier is available, returns an empty
+   results file that downstream stages handle gracefully.
 
 Design decisions:
-- ML classifier (satd_detector.jar) reads one comment per line from stdin and writes
-  ">SATD" or ">Not SATD" per line to stdout. We batch ALL comments from all files in
-  one subprocess call, then map results back to files by position.
-- SATD type (DEFECT vs DESIGN) is determined by keyword patterns applied only to
-  comments already classified as SATD by the ML model — higher precision than applying
-  keywords to all text.
-- Docker image availability checked with a 30s pull timeout; if unavailable, Docker
-  is skipped immediately rather than waiting 10 minutes for docker run to time out.
-- Keyword patterns based on Potdar & Shihab (2014) and Maldonado & Shihab (2015).
+- ML classifier reads comments line-by-line via stdin and emits classification labels
+  via stdout, batched across all files for efficiency.
+- SATDBailiff output (satd_types field) is passed as-is without re-classification.
+  ML classifier output does not include type information (binary classifier).
+- SATD is extracted at HEAD (current repository state), not scoped to a time_period
+  timestamp. age-related metrics are computed relative to an optional end_date.
 """
 
 import base64
@@ -39,37 +41,29 @@ import requests
 
 log = logging.getLogger(__name__)
 
-# Comment-line extraction: strips //, /*, *, # markers and returns inner text
+# Comment-line extraction: strips //, /*, *, # markers and returns inner text.
+# All extracted comments are passed directly to the ML classifier — pre-filtering
+# risks silently dropping SATD that the classifier would correctly identify.
 COMMENT_LINE_RE = re.compile(r"^\s*(?://+|/\*+|\*+|#)\s*(.+)$")
-
-# Applied to confirmed SATD text to determine type (DEFECT vs DESIGN)
-DEFECT_RE = re.compile(
-    r"\b(fixme|fix me|bug[:\s]|broken|workaround|kludge|hack[:\s]|xxx[:\s])\b",
-    re.IGNORECASE,
-)
-DESIGN_RE = re.compile(
-    r"\b(todo|to[- ]do|refactor|redesign|temp[:\s]|temporary|pending|review later|"
-    r"clean[- ]?up|remove this|should be|needs? to be|must be|revisit|"
-    r"this is wrong|not ideal|better approach)\b",
-    re.IGNORECASE,
-)
 
 
 def _extract_all_comments(content: str) -> list[str]:
-    """Extract all comment lines from source file, stripping syntax markers."""
+    """
+    Extract comment lines from source file, stripping syntax markers.
+    
+    Empty strings after stripping are excluded to preserve stdin line protocol integrity;
+    all other comment text is passed to the classifier without filtering.
+    """
     comments = []
     for line in content.splitlines():
         m = COMMENT_LINE_RE.match(line)
-        if m:
-            text = m.group(1).strip()
-            if len(text) > 3:  # skip trivial markers like "---" or "..."
-                comments.append(text)
+        if not m:
+            continue
+        text = m.group(1).strip()
+        if not text:  # skip empty lines after stripping
+            continue
+        comments.append(text)
     return comments
-
-
-def _classify_satd_type(text: str) -> tuple[bool, bool]:
-    """Return (has_defect_satd, has_design_satd) for a confirmed SATD comment."""
-    return bool(DEFECT_RE.search(text)), bool(DESIGN_RE.search(text))
 
 
 class SATDExtractor:
@@ -79,12 +73,8 @@ class SATDExtractor:
         gh = config.get("github", {})
         self.repo_owner = gh.get("repo_owner", "")
         self.repo_name = gh.get("repo_name", "")
-        tp = config.get("time_period", {})
-        self.end_date = tp.get("end_date", "")
+        self.language = config.get("language", "java").lower()
         self.github_token = os.getenv("GITHUB_TOKEN", "")
-        project_id = config.get("project_id", "project")
-        self.repos_file = results_path / f"repos_{project_id}.txt"
-        self.db_props_file = results_path / f"db_{project_id}.properties"
         self._session: requests.Session | None = None
 
     # ------------------------------------------------------------------ #
@@ -101,18 +91,8 @@ class SATDExtractor:
         return self._session
 
     def _resolve_end_date_commit(self) -> str:
-        branch = self.config.get("github", {}).get("branch", "master")
-        try:
-            resp = self._github_session().get(
-                f"https://api.github.com/repos/{self.repo_owner}/{self.repo_name}/commits",
-                params={"sha": branch, "until": self.end_date + "T00:00:00Z", "per_page": 1},
-                timeout=30,
-            )
-            if resp.status_code == 200 and resp.json():
-                return resp.json()[0]["sha"]
-        except Exception as e:
-            log.warning(f"Could not resolve end_date commit: {e}")
-        log.warning("Falling back to HEAD for end_date commit")
+        """Always return HEAD. SATD extracted at the current repository state (thesis design decision)."""
+        log.info("SATD extracted at HEAD (current repository state) — thesis design decision")
         return "HEAD"
 
     def _fetch_file_content(self, file_path: str, ref: str) -> str | None:
@@ -172,7 +152,6 @@ class SATDExtractor:
 
         # Collect (file_path, comment_text) pairs
         all_comments: list[tuple[str, str]] = []
-        file_comment_counts: dict[str, int] = {}  # file_path → how many comments it contributed
 
         for i, fp in enumerate(file_paths, 1):
             if i % 50 == 0:
@@ -183,15 +162,13 @@ class SATDExtractor:
             comments = _extract_all_comments(content)
             if not comments:
                 continue
-            start_idx = len(all_comments)
             # Replace newlines within a comment so stdin line protocol stays intact
             cleaned = [c.replace("\n", " ").replace("\r", "") for c in comments]
             all_comments.extend((fp, c) for c in cleaned)
-            file_comment_counts[fp] = len(cleaned)
 
         if not all_comments:
             log.warning("No comments found in any file — skipping ML classifier")
-            return None
+            return self._empty_df()
 
         log.info(f"ML classifier: running on {len(all_comments)} comments...")
         stdin_text = "\n".join(c for _, c in all_comments) + "\n"
@@ -229,27 +206,25 @@ class SATDExtractor:
             if label == ">SATD":
                 file_satd.setdefault(fp, []).append(comment_text)
 
+        # Robustness check: if no SATD found despite having comments, warn about possible JAR format mismatch
+        if not file_satd and all_comments:
+            log.warning(
+                f"ML classifier produced no '>SATD' labels despite {len(all_comments)} comments. "
+                f"Possible JAR format mismatch or configuration issue — verify satd_detector.jar "
+                f"version and output format."
+            )
+
         rows = []
         for fp, satd_texts in file_satd.items():
-            has_defect = any(_classify_satd_type(t)[0] for t in satd_texts)
-            has_design = any(_classify_satd_type(t)[1] for t in satd_texts)
-            # Determine type label (fallback to DESIGN if no keyword match — ML confirmed it's SATD)
-            types = set()
-            for t in satd_texts:
-                d, g = _classify_satd_type(t)
-                if d:
-                    types.add("DEFECT")
-                if g:
-                    types.add("DESIGN")
-            if not types:
-                types.add("DESIGN")  # untyped SATD defaults to DESIGN
+            if len(satd_texts) > 20:
+                log.warning(
+                    f"satd_text capped at 20 comments for {fp} ({len(satd_texts)} total SATD instances) — "
+                    f"full count preserved in satd_count"
+                )
             rows.append({
                 "file_path": fp,
                 "satd_count": len(satd_texts),
-                "satd_text": " | ".join(satd_texts[:10]),  # cap at 10 for CSV readability
-                "satd_types": ",".join(sorted(types)),
-                "has_defect_satd": has_defect,
-                "has_design_satd": has_design,
+                "satd_text": " | ".join(satd_texts[:20]),  # cap at 20 for CSV readability
             })
 
         df = pd.DataFrame(rows) if rows else self._empty_df()
@@ -257,174 +232,43 @@ class SATDExtractor:
         return df
 
     # ------------------------------------------------------------------ #
-    #  Path 2: SATDBailiff Docker                                         #
-    # ------------------------------------------------------------------ #
-
-    def _docker_image_available(self) -> bool:
-        """Pull-check with 30s timeout — avoids a 10-minute hang when image is unavailable."""
-        try:
-            result = subprocess.run(
-                ["docker", "pull", "smilevo/satdbailiff"],
-                capture_output=True, text=True, timeout=30,
-            )
-            return result.returncode == 0
-        except (subprocess.TimeoutExpired, FileNotFoundError):
-            return False
-
-    def _write_repos_file(self, commit_hash: str) -> None:
-        self.repos_file.write_text(
-            f"https://github.com/{self.repo_owner}/{self.repo_name},{commit_hash}\n"
-        )
-
-    def _write_db_properties(self) -> None:
-        self.db_props_file.write_text(
-            f"url=jdbc:mysql://{os.getenv('MYSQL_HOST','localhost')}:"
-            f"{os.getenv('MYSQL_PORT','3306')}/{os.getenv('MYSQL_DATABASE','satd')}\n"
-            f"user={os.getenv('MYSQL_USER','root')}\n"
-            f"password={os.getenv('MYSQL_PASSWORD','')}\n"
-        )
-
-    def _run_docker(self) -> bool:
-        if not self._docker_image_available():
-            log.warning("SATDBailiff Docker image unavailable — skipping")
-            return False
-        log.info("Running SATDBailiff via Docker...")
-        try:
-            result = subprocess.run(
-                ["docker", "run", "--rm",
-                 "-e", f"GITHUB_TOKEN={self.github_token}",
-                 "-v", f"{self.results_path}:/output",
-                 "smilevo/satdbailiff",
-                 "-r", f"/output/{self.repos_file.name}",
-                 "-d", f"/output/{self.db_props_file.name}"],
-                capture_output=True, text=True, timeout=600,
-            )
-            if result.returncode == 0:
-                log.info("SATDBailiff Docker run succeeded")
-                return True
-            log.warning(f"SATDBailiff Docker failed: {result.stderr[:300]}")
-        except subprocess.TimeoutExpired:
-            log.warning("SATDBailiff Docker timed out after 600s")
-        return False
-
-    # ------------------------------------------------------------------ #
-    #  Path 3: SATDBailiff full JAR + MySQL                               #
-    # ------------------------------------------------------------------ #
-
-    def _find_satdbailiff_jar(self) -> Path | None:
-        tools = Path(__file__).parent.parent / "tools"
-        for name in ["SATDBailiff.jar"]:
-            p = tools / name
-            if p.exists():
-                return p
-        matches = list(tools.glob("SATDBailiff-*.jar"))
-        return matches[0] if matches else None
-
-    def _run_bailiff_jar(self) -> bool:
-        jar = self._find_satdbailiff_jar()
-        java_bin = shutil.which("java")
-        if not jar or not java_bin:
-            return False
-        log.info(f"Running SATDBailiff JAR ({jar.name})...")
-        try:
-            result = subprocess.run(
-                [java_bin, "-jar", str(jar), "-r", str(self.repos_file), "-d", str(self.db_props_file)],
-                capture_output=True, text=True, timeout=600,
-            )
-            if result.returncode == 0:
-                log.info("SATDBailiff JAR run succeeded")
-                return True
-            log.warning(f"SATDBailiff JAR failed: {result.stderr[:300]}")
-        except subprocess.TimeoutExpired:
-            log.warning("SATDBailiff JAR timed out after 600s")
-        return False
-
-    def _query_mysql(self) -> pd.DataFrame:
-        import mysql.connector
-        cnx = mysql.connector.connect(
-            host=os.getenv("MYSQL_HOST", "localhost"),
-            port=int(os.getenv("MYSQL_PORT", "3306")),
-            user=os.getenv("MYSQL_USER", "root"),
-            password=os.getenv("MYSQL_PASSWORD", ""),
-            database=os.getenv("MYSQL_DATABASE", "satd"),
-        )
-        cursor = cnx.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT file_path,
-                   COUNT(*) AS satd_count,
-                   GROUP_CONCAT(satd_instance_comment SEPARATOR ' | ') AS satd_text,
-                   GROUP_CONCAT(DISTINCT satd_type SEPARATOR ',') AS satd_types,
-                   MAX(CASE WHEN satd_type LIKE '%DEFECT%' THEN 1 ELSE 0 END) AS has_defect_satd,
-                   MAX(CASE WHEN satd_type LIKE '%DESIGN%' THEN 1 ELSE 0 END) AS has_design_satd
-            FROM satd_instance
-            WHERE (date_removed IS NULL OR date_removed > %s)
-              AND url LIKE %s
-            GROUP BY file_path
-        """, (self.end_date, f"%{self.repo_owner}/{self.repo_name}%"))
-        rows = cursor.fetchall()
-        cursor.close()
-        cnx.close()
-        df = pd.DataFrame(rows) if rows else self._empty_df()
-        if not df.empty:
-            df["has_defect_satd"] = df["has_defect_satd"].astype(bool)
-            df["has_design_satd"] = df["has_design_satd"].astype(bool)
-        return df
-
-    # ------------------------------------------------------------------ #
-    #  Path 4: Keyword-based via GitHub API                               #
-    # ------------------------------------------------------------------ #
-
-    def _extract_satd_keyword(self, file_paths: list[str], commit_ref: str) -> pd.DataFrame:
-        log.info(f"Keyword SATD: scanning {len(file_paths)} files...")
-        rows = []
-        for i, fp in enumerate(file_paths, 1):
-            if i % 50 == 0:
-                log.info(f"  [{i}/{len(file_paths)}] scanning...")
-            content = self._fetch_file_content(fp, commit_ref)
-            if not content:
-                continue
-            hits = []
-            for line in content.splitlines():
-                m = COMMENT_LINE_RE.match(line)
-                if not m:
-                    continue
-                text = m.group(1).strip()
-                is_d = bool(DEFECT_RE.search(text))
-                is_g = bool(DESIGN_RE.search(text))
-                if is_d or is_g:
-                    hits.append({"text": text, "defect": is_d, "design": is_g})
-            if hits:
-                types = set()
-                if any(h["defect"] for h in hits):
-                    types.add("DEFECT")
-                if any(h["design"] for h in hits):
-                    types.add("DESIGN")
-                rows.append({
-                    "file_path": fp,
-                    "satd_count": len(hits),
-                    "satd_text": " | ".join(h["text"] for h in hits[:10]),
-                    "satd_types": ",".join(sorted(types)),
-                    "has_defect_satd": any(h["defect"] for h in hits),
-                    "has_design_satd": any(h["design"] for h in hits),
-                })
-        df = pd.DataFrame(rows) if rows else self._empty_df()
-        log.info(f"Keyword SATD done: {len(df)} files with SATD")
-        return df
-
-    # ------------------------------------------------------------------ #
     #  Helpers                                                             #
     # ------------------------------------------------------------------ #
 
     def _empty_df(self) -> pd.DataFrame:
+        """Return empty DataFrame with ML classifier schema (3 columns: file_path, satd_count, satd_text)."""
         return pd.DataFrame(columns=[
-            "file_path", "satd_count", "satd_text", "satd_types",
-            "has_defect_satd", "has_design_satd",
+            "file_path", "satd_count", "satd_text",
         ])
 
     def _save(self, df: pd.DataFrame, method: str) -> str:
         df.to_csv(self.results_path / "satd_comments.csv", index=False)
         (self.results_path / "satd_method.txt").write_text(method + "\n")
         log.info(f"SATD method used: {method}")
+        
+        # Verify output schema matches expected set for the detected method
+        # ML classifier path: file_path, satd_count, satd_text (3 columns)
+        # SATDBailiff path: file_path, satd_count, satd_text, satd_types, satd_age_days, satd_change_count (6 columns)
+        if "satd_age_days" in df.columns:
+            # SATDBailiff path (Java)
+            expected_columns = {
+                "file_path", "satd_count", "satd_text", "satd_types",
+                "satd_age_days", "satd_change_count",
+            }
+        else:
+            # ML classifier path (Python repos) or empty fallback
+            expected_columns = {"file_path", "satd_count", "satd_text"}
+        
+        actual_columns = set(df.columns)
+        if actual_columns != expected_columns:
+            extra = actual_columns - expected_columns
+            missing = expected_columns - actual_columns
+            raise ValueError(
+                f"Output schema mismatch: expected={expected_columns}, "
+                f"actual={actual_columns}, extra={extra}, missing={missing}"
+            )
+        
+        log.info(f"✓ SATD schema verified: {len(df.columns)} columns {sorted(df.columns)}")
         return method
 
     # ------------------------------------------------------------------ #
@@ -436,40 +280,53 @@ class SATDExtractor:
         commit_ref = self._resolve_end_date_commit()
         file_paths = self._get_file_paths()
 
-        # --- Path 1: ML classifier (satd_detector.jar) ---
+        # --- Path 1: SATDBailiff (Docker + JAR) — Java only ---
+        # Most academically rigorous: mines full git history,
+        # giving accurate point-in-time SATD state via lifecycle tracking (Ren et al. 2021).
+        # Requires Java + Docker + GITHUB_TOKEN. Downloads JAR automatically on first run.
+        # NOTE: SATDBailiff is Java-only (thesis design decision); skip for Python repos.
+        if self.language.lower() == "python":
+            log.info("Skipping SATDBailiff — Python repository, SATDBailiff is Java-only (thesis design decision)")
+        else:
+            try:
+                from components.satdbailiff_runner import SATDBailiffRunner
+                runner = SATDBailiffRunner(self.config, self.results_path)
+                if runner.available():
+                    log.info("--- Path 1: SATDBailiff (Docker + JAR) ---")
+                    df = runner.run(commit_ref)
+                    if df is not None and not df.empty:
+                        return self._save(df, f"satdbailiff ({len(df)} files with SATD)")
+                    elif df is not None:
+                        # SATDBailiff completed but found no active SATD at the terminal commit.
+                        # This can mean (a) all SATD was genuinely resolved before HEAD, or
+                        # (b) the Weka classifier's threshold missed current-state SATD.
+                        # Fall through to the ML classifier to ensure C3 has SATD signal.
+                        log.info(
+                            "SATDBailiff found no active SATD — falling through to ML classifier. "
+                            "Check SATD table stats above to distinguish resolved vs. undetected."
+                        )
+            except Exception as e:
+                log.warning(f"SATDBailiff runner error: {e} — falling through to ML classifier")
+
+        # --- Path 2: satd_detector.jar ML classifier ---
+        # High-accuracy NLP detection (Ren et al. 2019) but fetches file contents via
+        # GitHub API rather than walking git history. Requires Java + JAR
+        # in tools/ + GitHub token to fetch file contents.
         if self._find_classifier_jar() and shutil.which("java") and file_paths and self.github_token:
             df = self._run_ml_classifier(file_paths, commit_ref)
-            if df is not None:
+            if df is not None and not df.empty:
+                # Log output schema for verification
+                log.info(f"ML classifier output columns: {list(df.columns)}")
+                # NOTE: ML classifier schema (3 cols: file_path, satd_count, satd_text) differs from SATDBailiff schema (6 cols: adds satd_types, satd_age_days, satd_change_count).
+                # satd_age_days and satd_change_count are only present for Java repos (SATDBailiff path)
+                # and will be absent for Python repos. Stage 3 enrichment must handle via LEFT JOIN with null fill.
                 return self._save(df, f"satd-detector-jar-ml ({len(df)} files with SATD)")
+            elif df is not None:
+                log.info(f"ML classifier output columns: {list(df.columns)}")
+                log.info("ML classifier found no SATD — falling through to empty")
 
-        # --- Path 2: SATDBailiff Docker ---
-        if shutil.which("docker"):
-            self._write_repos_file(commit_ref)
-            self._write_db_properties()
-            if self._run_docker():
-                try:
-                    df = self._query_mysql()
-                    return self._save(df, f"satdbailiff-docker ({len(df)} files)")
-                except Exception as e:
-                    log.error(f"MySQL query failed after Docker run: {e}")
-
-        # --- Path 3: SATDBailiff full JAR + MySQL ---
-        if self._find_satdbailiff_jar() and shutil.which("java"):
-            self._write_repos_file(commit_ref)
-            self._write_db_properties()
-            if self._run_bailiff_jar():
-                try:
-                    df = self._query_mysql()
-                    return self._save(df, f"satdbailiff-jar ({len(df)} files)")
-                except Exception as e:
-                    log.error(f"MySQL query failed after JAR run: {e}")
-
-        # --- Path 4: Keyword-based via GitHub API ---
-        if file_paths and self.github_token:
-            log.info("Falling back to keyword-based SATD detection")
-            df = self._extract_satd_keyword(file_paths, commit_ref)
-            return self._save(df, f"keyword-github-api ({len(df)} files with SATD)")
-
-        # --- Path 5: Empty ---
-        log.warning("No SATD extraction method available — SATD fields will be empty in C3")
-        return self._save(self._empty_df(), "empty (no method available)")
+        # --- Path 3: Empty ---
+        log.warning("No ML classifier available — SATD will be empty for this repo. Verify satd_detector.jar is in tools/")
+        empty_df = self._empty_df()
+        log.info(f"Empty SATD output columns: {list(empty_df.columns)}")
+        return self._save(empty_df, "empty (no method available)")

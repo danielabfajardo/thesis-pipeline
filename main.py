@@ -19,7 +19,7 @@ import logging
 import os
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -99,8 +99,14 @@ def enrich_issues(project_id: str) -> pd.DataFrame:
 
     measures_path = results_path / "sonarqube_measures.csv"
     if measures_path.exists():
-        measures = pd.read_csv(measures_path)
-        issues = issues.merge(measures, on="file_path", how="left", suffixes=("", "_m"))
+        try:
+            measures = pd.read_csv(measures_path)
+            if not measures.empty:
+                issues = issues.merge(measures, on="file_path", how="left", suffixes=("", "_m"))
+            else:
+                log.warning("sonarqube_measures.csv is empty — file quality metrics will be empty")
+        except Exception as e:
+            log.warning(f"sonarqube_measures.csv could not be read ({e}) — skipping")
     else:
         log.warning("sonarqube_measures.csv not found — file quality metrics will be empty")
 
@@ -118,8 +124,16 @@ def enrich_issues(project_id: str) -> pd.DataFrame:
     else:
         log.warning("satd_comments.csv not found — SATD fields will be empty")
 
+    alert_churn_path = results_path / "alert_churn_metrics.csv"
+    if alert_churn_path.exists():
+        alert_churn = pd.read_csv(alert_churn_path)
+        issues = issues.merge(alert_churn, on="issue_key", how="left", suffixes=("", "_ac"))
+    else:
+        log.warning("alert_churn_metrics.csv not found — alert-level churn fields will be empty")
+
     final_cols = [
-        "issue_key", "file_path", "file", "rule", "severity", "severity_score", "type",
+        "issue_key", "file_path", "file", "rule",
+        "severity", "severity_score", "impact_severity", "impact_quality", "type",
         "message", "line", "effort", "debt", "tags", "creationDate", "status",
         "bugs", "vulnerabilities", "code_smells", "violations",
         "blocker_violations", "critical_violations", "major_violations",
@@ -130,7 +144,9 @@ def enrich_issues(project_id: str) -> pd.DataFrame:
         "commit_count", "unique_authors", "bus_factor",
         "lines_added", "lines_deleted", "churn",
         "days_since_modified", "file_age_days",
-        "satd_count", "satd_text", "satd_types", "has_defect_satd", "has_design_satd",
+        "satd_count", "satd_text", "satd_types",
+        "satd_age_days", "satd_change_count",
+        "line_last_modified_days", "line_author",
     ]
 
     for col in final_cols:
@@ -139,7 +155,21 @@ def enrich_issues(project_id: str) -> pd.DataFrame:
 
     issues = issues[final_cols]
 
-    numeric_fill = [
+    # Check for Python-specific SATD schema (ML classifier only).
+    # Python repos (3-col SATD: satd_count, satd_text, satd_types)
+    # vs Java repos (6-col SATD: satd_{count,text,types,age_days,change_count} from SATDBailiff).
+    if "satd_types" not in issues.columns or issues["satd_types"].isna().all():
+        log.info("Python repo: satd_types, satd_age_days, satd_change_count set to null (ML classifier path, no lifecycle signals)")
+        issues["satd_types"] = None
+        issues["satd_age_days"] = None
+        issues["satd_change_count"] = None
+
+    # Fill only numeric columns where 0 is a meaningful value.
+    # SATD and churn columns are preserved as null when LEFT JOIN finds no match—
+    # 0 would incorrectly signal absence of SATD/churn activity.
+    # E.g., commit_count=0 means the file genuinely had no commits in the window,
+    # but satd_count=0 means either no SATD exists OR no SATD extractor ran.
+    numeric_fill_with_zero = [
         "bugs", "vulnerabilities", "code_smells", "violations",
         "blocker_violations", "critical_violations", "major_violations",
         "minor_violations", "info_violations",
@@ -147,30 +177,49 @@ def enrich_issues(project_id: str) -> pd.DataFrame:
         "sqale_index", "sqale_debt_ratio", "coverage", "lines",
         "commit_count", "unique_authors", "bus_factor",
         "lines_added", "lines_deleted", "churn",
-        "days_since_modified", "file_age_days", "satd_count",
+        "days_since_modified", "file_age_days",
     ]
-    for col in numeric_fill:
+    for col in numeric_fill_with_zero:
         if col in issues.columns:
             issues[col] = issues[col].fillna(0)
 
-    bool_fill = ["has_defect_satd", "has_design_satd"]
-    for col in bool_fill:
-        if col in issues.columns:
-            issues[col] = issues[col].fillna(False)
+    # SATD and churn columns preserve null (no fill):
+    # satd_count, satd_age_days, satd_change_count (remain null if no SATD extractor output)
+    # line_last_modified_days (remains null if no blame data available)
 
     out_path = results_path / "enriched_issues.csv"
     issues.to_csv(out_path, index=False)
     log.info(f"enriched_issues.csv written: {len(issues)} issues")
+
+    # Rebuild ranking_c1.csv from fully-enriched data so the UI has file-level metrics
+    # (complexity, coverage, etc.) in the C1 list — the extractor writes a metric-less
+    # preliminary version; this overwrites it with the complete enriched columns.
+    _rebuild_c1_ranking(results_path, issues)
+
     return issues
+
+
+def _rebuild_c1_ranking(results_path: Path, enriched: pd.DataFrame) -> None:
+    # sonarqube_issues.csv was fetched with s=SEVERITY&asc=false so it already carries
+    # SonarQube's exact ordering. enriched_issues.csv preserves that order via LEFT JOINs
+    # (pandas merge with how="left" keeps the left-frame order). Just re-assign rank numbers.
+    df = enriched.copy().reset_index(drop=True)
+    df["c1_rank"] = df.index + 1
+    df.to_csv(results_path / "ranking_c1.csv", index=False)
+    log.info(f"ranking_c1.csv rebuilt from enriched data: {len(df)} issues")
 
 
 def write_run_summary(project_id: str, config: dict, results: dict, start_time: float) -> None:
     elapsed = time.time() - start_time
     path = RESULTS_DIR / project_id / "run_summary.txt"
+    tp = config.get("time_period", {})
+    start_date = tp.get("start_date") or "(none)"
+    end_date = tp.get("end_date") or "(none)"
     lines = [
         f"Run summary: {project_id}",
-        f"Timestamp:   {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC",
+        f"Timestamp:   {datetime.now(tz=timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC",
         f"Duration:    {elapsed:.1f}s",
+        f"Time window: {start_date} → {end_date}",
         "",
         "Component results:",
     ]
@@ -178,21 +227,24 @@ def write_run_summary(project_id: str, config: dict, results: dict, start_time: 
         lines.append(f"  {component:<20} {status}")
     lines.append("")
 
+    def _csv_len(p: Path) -> str:
+        try:
+            return str(len(pd.read_csv(p)))
+        except Exception:
+            return "0"
+
     issues_csv = RESULTS_DIR / project_id / "sonarqube_issues.csv"
     if issues_csv.exists():
-        df = pd.read_csv(issues_csv)
-        lines.append(f"Issues extracted: {len(df)}")
+        lines.append(f"Issues extracted: {_csv_len(issues_csv)}")
 
     enriched_csv = RESULTS_DIR / project_id / "enriched_issues.csv"
     if enriched_csv.exists():
-        df = pd.read_csv(enriched_csv)
-        lines.append(f"Enriched issues: {len(df)}")
+        lines.append(f"Enriched issues: {_csv_len(enriched_csv)}")
 
     for cond in ("c1", "c2", "c3"):
         r = RESULTS_DIR / project_id / f"ranking_{cond}.csv"
         if r.exists():
-            df = pd.read_csv(r)
-            lines.append(f"ranking_{cond}.csv: {len(df)} issues ranked")
+            lines.append(f"ranking_{cond}.csv: {_csv_len(r)} issues ranked")
 
     path.write_text("\n".join(lines) + "\n")
     log.info(f"run_summary.txt written to {path}")
@@ -217,6 +269,7 @@ def run_project(
     log.info(f"=== Starting project: {project_id} ===")
 
     config = load_config(project_id)
+    config["project_id"] = project_id   # passed to extractors for per-project artefact naming
     validate_api_keys(config, skip_sonarqube, skip_github, skip_satd, skip_llm)
 
     results_path = RESULTS_DIR / project_id

@@ -1,6 +1,21 @@
 project_id: "my-project"
 project_display_name: "My Project"
 
+# --- Time window ---
+# All three extractors (SonarQube, GitHub, SATD) respect these dates.
+#
+# Option A — fixed study window (e.g. proprietary repo where only a slice is accessible):
+#   start_date: "2023-01-01"   # issues/commits on or after this date
+#   end_date:   "2024-01-01"   # snapshot date: state of the codebase at this point
+#
+# Option B — full repository history (open-source or full access):
+#   start_date: null           # no lower bound
+#   end_date:   null           # no upper bound; SonarQube returns all open issues
+#
+# Option C — snapshot only (all historical issues up to a reference date):
+#   start_date: null
+#   end_date:   "2024-01-01"
+#
 time_period:
   start_date: "2023-01-01"
   end_date: "2024-01-01"
@@ -8,12 +23,12 @@ time_period:
 sonarqube:
   host: "http://localhost:9000"
   project_key: "my-project-key"
-  token: ""
+  token: ""           # leave empty to use SONAR_TOKEN env var
 
 github:
-  repo_owner: "apache"
-  repo_name: "commons-lang"
-  branch: "master"
+  repo_owner: "my-org"
+  repo_name: "my-repo"
+  branch: "main"
 
 components:
   run_sonarqube: true

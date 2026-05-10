@@ -1,4 +1,13 @@
 defaults:
+  # Time window for SonarQube and SATD extractors.
+  #
+  # SonarQube:  issues created before end_date (snapshot) and, if start_date is set,
+  #             created after start_date (restricts to the window only).
+  # SATD:       technical-debt comments present at end_date.
+  #
+  # Set either date to null to remove that bound (null end_date = include all future
+  # issues; null start_date = include all historical issues).
+  # To extract the full repository history, set both to null.
   time_period:
     start_date: "2023-01-01"
     end_date: "2024-01-01"
@@ -11,17 +20,18 @@ defaults:
 
   sonarqube:
     host: "http://localhost:9000"
-    max_issues: 500
 
   github:
     branch: "master"
+    # GitHub churn metrics use a separate lookback window (rolling days from today),
+    # independent of the SonarQube/SATD time_period. This allows current code quality
+    # issues to be contextualized with recent development activity.
+    churn_lookback_days: 365
 
   llm:
     model: "claude-sonnet-4-6"
     temperature: 0
     max_tokens: 32000
-    single_prompt_issue_limit: 800
-    batch_size: 500
 
   ui:
     port: 5001

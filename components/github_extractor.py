@@ -1,19 +1,8 @@
-"""
-Extracts file-level churn and contributor metrics via the GitHub REST API.
-
-Input:  Project config, results/{project_id}/sonarqube_issues.csv (for file list)
-Output: results/{project_id}/churn_metrics.csv
-
-Design decisions:
-- GitHub API over local clone: avoids data exposure for proprietary repositories
-- Bus factor = minimum authors covering >=50% of commits (Yamashita 2015)
-- All metrics scoped to time_period window for temporal consistency with SonarQube snapshot
-"""
-
+import json
 import logging
 import os
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -22,6 +11,29 @@ import requests
 log = logging.getLogger(__name__)
 
 GITHUB_API = "https://api.github.com"
+GRAPHQL_API = "https://api.github.com/graphql"
+
+_BLAME_QUERY = """
+query GetBlame($owner: String!, $name: String!, $path: String!, $ref: String!) {
+  repository(owner: $owner, name: $name) {
+    object(expression: $ref) {
+      ... on Commit {
+        blame(path: $path) {
+          ranges {
+            startingLine
+            endingLine
+            commit {
+              oid
+              committedDate
+              author { name }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+"""
 
 
 class GitHubExtractor:
@@ -32,9 +44,17 @@ class GitHubExtractor:
         self.owner = gh.get("repo_owner", "")
         self.repo = gh.get("repo_name", "")
         self.branch = gh.get("branch", "master")
-        tp = config.get("time_period", {})
-        self.start_date = tp.get("start_date", "")
-        self.end_date = tp.get("end_date", "")
+        
+        # Calculate churn window independently from SonarQube/SATD time_period
+        churn_lookback_days = gh.get("churn_lookback_days", 365)
+        today = datetime.now(timezone.utc).date()
+        lookback_date = today - timedelta(days=churn_lookback_days)
+        
+        self.start_date = lookback_date.isoformat()  # e.g., "2025-05-09"
+        self.end_date = today.isoformat()            # e.g., "2026-05-09"
+        
+        log.info(f"GitHub churn window: {self.start_date} → {self.end_date} ({churn_lookback_days} days lookback)")
+        
         self.token = os.getenv("GITHUB_TOKEN", "")
         self.session = requests.Session()
         if self.token:
@@ -55,7 +75,15 @@ class GitHubExtractor:
             log.warning(f"GitHub rate limit low ({remaining} remaining). Sleeping {sleep_secs}s...")
             time.sleep(sleep_secs)
 
-    def _fetch_commits_for_file(self, file_path: str, since: str = None, until: str = None) -> list[dict]:
+    def _fetch_commits_for_file(self, file_path: str, since: str = None, until: str = None, max_pages: int = None) -> list[dict]:
+        """Fetch commits for a file, optionally limited by page count.
+        
+        Args:
+            file_path: Path to the file
+            since: Start date for commits (YYYY-MM-DD format)
+            until: End date for commits (YYYY-MM-DD format)
+            max_pages: Maximum number of pages to fetch (None = unlimited). Each page is 100 commits.
+        """
         params = {"path": file_path, "sha": self.branch, "per_page": 100}
         if since:
             params["since"] = since + "T00:00:00Z"
@@ -65,6 +93,9 @@ class GitHubExtractor:
         commits = []
         page = 1
         while True:
+            if max_pages and page > max_pages:
+                log.warning(f"Hit pagination cap ({max_pages} pages, ~{len(commits)} commits) for {file_path} — file_age_days may be a lower bound")
+                break
             params["page"] = page
             resp = self._get(f"/repos/{self.owner}/{self.repo}/commits", params)
             if resp.status_code == 404:
@@ -124,10 +155,14 @@ class GitHubExtractor:
                         lines_added += f.get("additions", 0)
                         lines_deleted += f.get("deletions", 0)
 
-        end_dt = datetime.strptime(self.end_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        end_dt = (
+            datetime.strptime(self.end_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            if self.end_date else datetime.now(timezone.utc)
+        )
 
         last_modified_date = ""
         days_since_modified = 0
+        last_dt = None
         if dates:
             dates.sort(reverse=True)
             last_modified_date = dates[0]
@@ -137,7 +172,7 @@ class GitHubExtractor:
             except Exception:
                 days_since_modified = 0
 
-        first_commits = self._fetch_commits_for_file(file_path)
+        first_commits = self._fetch_commits_for_file(file_path, max_pages=5)
         file_age_days = 0
         if first_commits:
             oldest = sorted(first_commits, key=lambda c: c.get("commit", {}).get("author", {}).get("date", ""))
@@ -176,7 +211,111 @@ class GitHubExtractor:
             "file_age_days": 0,
         }
 
+    def _fetch_blame_ranges(self, file_path: str) -> list[dict]:
+        """Fetch git blame ranges via GitHub GraphQL API.
+        Returns list of {startingLine, endingLine, oid, committedDate, authorName}."""
+        if not self.token:
+            return []
+        payload = {
+            "query": _BLAME_QUERY,
+            "variables": {
+                "owner": self.owner,
+                "name": self.repo,
+                "path": file_path,
+                "ref": self.branch,
+            },
+        }
+        resp = self.session.post(GRAPHQL_API, json=payload, timeout=30)
+        self._check_rate_limit(resp)
+
+        if resp.status_code != 200:
+            log.warning(f"GraphQL blame {resp.status_code} for {file_path}")
+            return []
+
+        data = resp.json()
+        if "errors" in data:
+            log.warning(f"GraphQL errors for {file_path}: {data['errors'][:1]}")
+            return []
+
+        try:
+            ranges = data["data"]["repository"]["object"]["blame"]["ranges"]
+        except (KeyError, TypeError):
+            log.warning(f"Unexpected GraphQL blame structure for {file_path}")
+            return []
+
+        result = []
+        for r in ranges:
+            commit = r.get("commit", {})
+            author = commit.get("author") or {}
+            result.append({
+                "startingLine": r["startingLine"],
+                "endingLine": r["endingLine"],
+                "oid": commit.get("oid", ""),
+                "committedDate": commit.get("committedDate", ""),
+                "authorName": author.get("name", ""),
+            })
+        return result
+
+    def _compute_alert_churn(self, issues_df: pd.DataFrame) -> pd.DataFrame:
+        """Map each issue to its line's blame entry: days since line last modified, author, commit SHA."""
+        end_dt = (
+            datetime.strptime(self.end_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            if self.end_date else datetime.now(timezone.utc)
+        )
+
+        blame_cache: dict[str, list[dict]] = {}
+        rows = []
+
+        for _, issue in issues_df.iterrows():
+            issue_key = str(issue.get("issue_key", ""))
+            file_path = str(issue.get("file_path", ""))
+            line = issue.get("line")
+
+            if not file_path or pd.isna(line):
+                rows.append({"issue_key": issue_key, "line_last_modified_days": None,
+                              "line_author": ""})
+                continue
+
+            line = int(line)
+
+            if file_path not in blame_cache:
+                try:
+                    blame_cache[file_path] = self._fetch_blame_ranges(file_path)
+                except Exception as e:
+                    log.warning(f"Blame fetch failed for {file_path}: {e}")
+                    blame_cache[file_path] = []
+
+            matched = next(
+                (r for r in blame_cache[file_path]
+                 if r["startingLine"] <= line <= r["endingLine"]),
+                None,
+            )
+
+            if matched is None:
+                rows.append({"issue_key": issue_key, "line_last_modified_days": None,
+                              "line_author": ""})
+                continue
+
+            line_last_modified_days = None
+            try:
+                committed_dt = datetime.fromisoformat(matched["committedDate"].replace("Z", "+00:00"))
+                line_last_modified_days = max((end_dt - committed_dt).days, 0)
+            except Exception:
+                pass
+
+            rows.append({
+                "issue_key": issue_key,
+                "line_last_modified_days": line_last_modified_days,
+                "line_author": matched.get("authorName", ""),
+            })
+
+        return pd.DataFrame(rows)
+
     def run(self) -> None:
+        # Log extraction metadata
+        extraction_datetime = datetime.now(timezone.utc).isoformat()
+        log.info(f"GitHub extraction started: {extraction_datetime} UTC")
+        
         issues_path = self.results_path / "sonarqube_issues.csv"
         if not issues_path.exists():
             raise FileNotFoundError("sonarqube_issues.csv must exist before running GitHub extractor")
@@ -199,3 +338,37 @@ class GitHubExtractor:
         out_path = self.results_path / "churn_metrics.csv"
         df.to_csv(out_path, index=False)
         log.info(f"churn_metrics.csv written: {len(df)} rows")
+
+        # Alert-level churn via GraphQL blame (requires GITHUB_TOKEN)
+        if self.token:
+            try:
+                log.info(f"Computing alert-level churn via GitHub blame API ({len(issues)} issues)...")
+                alert_df = self._compute_alert_churn(issues)
+                alert_path = self.results_path / "alert_churn_metrics.csv"
+                alert_df.to_csv(alert_path, index=False)
+                enriched_count = alert_df["line_last_modified_days"].notna().sum()
+                log.info(f"alert_churn_metrics.csv written: {len(alert_df)} rows, {enriched_count} with blame data")
+            except Exception as e:
+                log.warning(f"Alert-level churn computation failed: {e} — skipping")
+        else:
+            log.warning("GITHUB_TOKEN not set — skipping alert-level churn (blame requires authentication)")
+        
+        # Write extraction metadata
+        metadata = {
+            "github_extraction_date": extraction_datetime,
+            "churn_window_start": self.start_date,
+            "churn_window_end": self.end_date,
+        }
+        metadata_path = self.results_path / "extraction_metadata.json"
+        if metadata_path.exists():
+            try:
+                with open(metadata_path, "r") as f:
+                    existing = json.load(f)
+                existing.update(metadata)
+                metadata = existing
+            except Exception as e:
+                log.warning(f"Could not merge extraction metadata: {e}")
+        
+        with open(metadata_path, "w") as f:
+            json.dump(metadata, f, indent=2)
+        log.info(f"extraction_metadata.json written")

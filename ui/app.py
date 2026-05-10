@@ -5,6 +5,20 @@ Neutral presentation: no AI, LLM, algorithm, or condition labels visible to part
 Lists are shown as "List 1", "List 2", "List 3". Reasoning shown as "Analysis notes:".
 List-to-condition mapping is stable per project (seeded from project_id) and documented
 in a hidden HTML comment.
+
+CRITICAL DESIGN DECISION - AI CodeFix Suppression:
+When displaying rule explanations from SonarQube (via rule_descriptions.json), display only
+the hand-written rule explanation (htmlDesc/mdDesc) and rule metadata. Do NOT display
+AI-generated CodeFix suggestions if present in the SonarQube response. This preserves
+the validity of the Part 3 disclosure ("this list was LLM-generated") and prevents
+participants from unknowingly encountering AI-generated content. See ui/DESIGN_DECISIONS.md
+for full implementation guidance.
+
+CRITICAL DESIGN DECISION - Severity Vocabulary:
+C1 displays native SonarQube impact_severity (HIGH/MEDIUM/LOW).
+C2/C3 display LLM llm_severity (HIGH/MEDIUM/LOW per thesis Fix 1).
+Both use identical 3-level vocabulary to isolate ranking algorithm effects from
+vocabulary-mismatch artifacts in interview evaluation (RQ2/RQ3).
 """
 
 import hashlib
@@ -16,6 +30,27 @@ from pathlib import Path
 import pandas as pd
 import yaml
 from flask import Flask, jsonify, redirect, render_template, url_for
+
+# Severity vocabulary for display:
+# C1: Uses SonarQube 10.x native impact_severity (HIGH/MEDIUM/LOW)
+# C2/C3: Uses LLM output llm_severity (HIGH/MEDIUM/LOW per thesis Fix 1)
+# Fallback mapping handles legacy CSV values for backward compatibility.
+_LEGACY_TO_NEW_SEV = {
+    "BLOCKER": "HIGH",          # Legacy → 3-level
+    "CRITICAL": "HIGH",         # Legacy → 3-level
+    "MAJOR": "MEDIUM",          # Legacy → 3-level
+    "MINOR": "LOW",             # Legacy → 3-level
+    "INFO": "LOW",              # Legacy → 3-level
+    "HIGH": "HIGH",             # Already 3-level
+    "MEDIUM": "MEDIUM",         # Already 3-level
+    "LOW": "LOW",               # Already 3-level
+}
+# Derives software quality category from legacy issue type
+_TYPE_TO_QUALITY = {
+    "BUG": "RELIABILITY",
+    "VULNERABILITY": "SECURITY",
+    "CODE_SMELL": "MAINTAINABILITY",
+}
 
 
 def _condition_rotation(project_id: str) -> dict[str, str]:
@@ -52,12 +87,39 @@ def _issue_age_days(creation_date_str: str) -> int:
 
 
 def _df_to_issue_list(df: pd.DataFrame, rank_col: str, reasoning_col: bool = True) -> list[dict]:
+    """
+    Convert ranking DataFrame to issue list for API response.
+    
+    Severity sourcing (interview UI consistency requirement):
+    - C1 (reasoning_col=False): Display native SonarQube 10.x severity from impact_severity field.
+      This ensures C1 shows exactly what participants would see in SonarQube's native UI.
+    - C2/C3 (reasoning_col=True): Display LLM output llm_severity (HIGH/MEDIUM/LOW only per thesis Fix 1).
+      This ensures C2/C3 show the LLM's re-prioritization judgment using the same vocabulary as C1,
+      so differences are due to ranking algorithm, not vocabulary mismatch.
+    """
     issues = []
     for _, row in df.iterrows():
+        if reasoning_col:
+            # C2/C3: Use LLM output severity (thesis Fix 1 ensures this is HIGH/MEDIUM/LOW vocabulary)
+            raw_sev = str(row.get("llm_severity", "MEDIUM")).upper()
+            display_severity = _LEGACY_TO_NEW_SEV.get(raw_sev, "MEDIUM")
+            raw_type = str(row.get("llm_type", "CODE_SMELL")).upper()
+            display_quality = _TYPE_TO_QUALITY.get(raw_type, "MAINTAINABILITY")
+        else:
+            # C1: Use SonarQube 10.x native impact_severity (HIGH/MEDIUM/LOW from API)
+            display_severity = str(row.get("impact_severity", "") or "")
+            if not display_severity:
+                # Fallback: convert legacy severity field if impact_severity missing (older CSVs)
+                raw_sev = str(row.get("severity", "MAJOR")).upper()
+                display_severity = _LEGACY_TO_NEW_SEV.get(raw_sev, "MEDIUM")
+            display_quality = str(row.get("impact_quality", "") or "")
+
         issue = {
             "issue_key": str(row.get("issue_key", "")),
             "severity": str(row.get("llm_severity" if reasoning_col else "severity", "MAJOR")),
             "type": str(row.get("llm_type" if reasoning_col else "type", "CODE_SMELL")),
+            "display_severity": display_severity,  # UI displays this for all conditions (3-level vocabulary)
+            "display_quality": display_quality,    # display_severity sourced from impact_severity (C1) or llm_severity (C2/C3)
             "message": str(row.get("message", "")),
             "file": str(row.get("file", "")),
             "file_path": str(row.get("file_path", "")),
@@ -69,8 +131,17 @@ def _df_to_issue_list(df: pd.DataFrame, rank_col: str, reasoning_col: bool = Tru
             "reasoning": str(row.get("llm_reasoning", "") or "") if reasoning_col else "",
             "file_complexity": int(row.get("complexity", 0) or 0),
             "file_cognitive_complexity": int(row.get("cognitive_complexity", 0) or 0),
-            "file_coverage": round(float(row.get("coverage", 0) or 0), 1),
+            "file_coverage": (
+                round(float(row.get("coverage", 0)), 1)
+                if row.get("coverage") is not None and float(row.get("coverage", 0) or 0) > 0
+                else None
+            ),
             "file_bugs": int(row.get("bugs", 0) or 0),
+            "file_violations": int(row.get("violations", 0) or 0),
+            "file_sqale_index": int(row.get("sqale_index", 0) or 0),
+            "file_duplicated_lines_density": round(float(row.get("duplicated_lines_density", 0) or 0), 1),
+            "file_reliability_rating": str(row.get("reliability_rating", "") or ""),
+            "file_security_rating": str(row.get("security_rating", "") or ""),
         }
         issues.append(issue)
     return issues
