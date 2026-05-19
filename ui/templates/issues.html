@@ -8,6 +8,17 @@
 {% block content %}
 {{ rotation_comment | safe }}
 
+<div class="session-bar">
+  <label class="session-label" for="latin-square-select">Order</label>
+  <select id="latin-square-select" class="filter-select" aria-label="Latin Square ordering">
+    {% for key in available_orders %}
+    <option value="{{ key }}" {% if key == active_order %}selected{% endif %}>{{ key }}</option>
+    {% endfor %}
+  </select>
+  <span class="session-hint">List 1 → {{ rotation['c1'] if rotation['c1'] != 'List 1' else 'C1' }}</span>
+  <span class="session-current">Current: <strong id="active-order-display">{{ active_order }}</strong></span>
+</div>
+
 <div class="filter-bar">
   <select class="filter-select" id="filter-quality">
     <option value="">Software Quality</option>
@@ -72,6 +83,7 @@
   window.PIPELINE_CONFIG = {
     projectId: {{ project_id | tojson }},
     rotation: {{ rotation | tojson }},
+    activeOrder: {{ active_order | tojson }},
   };
 </script>
 {% endblock %}

@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Researcher — {{ project_id }}{% endblock %}
+
+{% block header_extra %}
+<span class="header-project">Researcher · {{ project_id }}</span>
+<a href="{{ url_for('issues', project_id=project_id) }}" class="header-link">Interview view →</a>
+{% endblock %}
+
+{% block content %}
+<aside class="researcher-toc" aria-label="Pipeline stages">
+  <h3>Pipeline stages</h3>
+  <ol>
+    <li><a href="#stage-summary">Summary</a></li>
+    <li><a href="#stage-sonarqube">1 · SonarQube extraction</a></li>
+    <li><a href="#stage-github">2 · GitHub churn &amp; blame</a></li>
+    <li><a href="#stage-satd">3 · SATD detection</a></li>
+    <li><a href="#stage-pool">4 · 200-alert pool</a></li>
+    <li><a href="#stage-llm-c2">5 · LLM ranking — C2</a></li>
+    <li><a href="#stage-llm-c3">5 · LLM ranking — C3</a></li>
+    <li><a href="#stage-display">6 · 15-alert display set</a></li>
+    <li><a href="#stage-diff">7 · C1 vs C2 vs C3 diff</a></li>
+  </ol>
+</aside>
+
+<div class="researcher-content">
+
+  <!-- ============================================================ -->
+  <section id="stage-summary" class="stage-card">
+    <h2>Summary</h2>
+    <p class="stage-why">Snapshot of which pipeline outputs exist for this project, the SATD method that ran, and the project configuration.</p>
+    <div class="stage-body" id="summary-body"><em>Loading…</em></div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="stage-sonarqube" class="stage-card">
+    <h2>1 · SonarQube extraction</h2>
+    <p class="stage-why">
+      Pulls every open issue from the local SonarQube server via <code>/api/issues/search</code>
+      with <code>s=SEVERITY&amp;asc=false</code> so the order matches what a developer sees in
+      SonarQube's UI. SonarQube caps a single filter at 10,000 results — when the project
+      exceeds that, the extractor recursively splits by severity, then type, then rule.
+      File-level quality metrics come from <code>/api/measures/component_tree</code>, fetched
+      in three groups (core / violations / ratings) so one failing group does not block the others.
+      Rule explanations come from <code>/api/rules/show</code>; the AI CodeFix field is dropped.
+    </p>
+    <div class="stage-body" id="sonarqube-body"><em>Loading…</em></div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="stage-github" class="stage-card">
+    <h2>2 · GitHub churn &amp; blame</h2>
+    <p class="stage-why">
+      Two independent signals. <strong>File-level churn</strong> (one row per file): commit count,
+      unique authors, bus factor (smallest set of authors covering ≥50% of commits),
+      lines added/deleted, total churn, days since last modified, file age. The window is
+      <code>churn_lookback_days</code> from the project YAML (defaults to 365).
+      <strong>Alert-level blame</strong> (one row per alert): days since the specific flagged
+      line was last modified, plus author. Computed by paging <code>git blame</code> via the
+      GitHub GraphQL API, then matching each alert's <code>line</code> against the returned ranges.
+      Blame is cached per file, so a file with multiple alerts hits GraphQL once.
+    </p>
+    <div class="stage-body" id="github-body"><em>Loading…</em></div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="stage-satd" class="stage-card">
+    <h2>3 · SATD detection</h2>
+    <p class="stage-why">
+      Self-admitted technical debt — comments where developers acknowledge known problems.
+      Three paths in fall-through order. <strong>Path 1 (SATDBailiff)</strong>, Java only: a Docker MySQL
+      container plus the SATDBailiff JAR, walks full git history, classifies each comment with
+      Liu et al.'s detector, tracks lifecycle events (added / changed / removed), and returns
+      <em>active at HEAD</em> instances with age and change-count metadata (6-column schema).
+      <strong>Path 2 (ML classifier)</strong>: <code>satd_detector.jar</code> binary classifier; pulls file
+      content from GitHub, extracts comments, batches every comment through the classifier in
+      one subprocess call (3-column schema). <strong>Path 3</strong>: empty CSV.
+    </p>
+    <div class="stage-body" id="satd-body"><em>Loading…</em></div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="stage-pool" class="stage-card">
+    <h2>4 · 200-alert pool (stratified)</h2>
+    <p class="stage-why">
+      Reduces the full alert set to a balanced 200 the LLM can rank in a single prompt.
+      Tier budgets: <strong>HIGH=60, MEDIUM=100, LOW=40</strong>. Within each tier, alerts are walked
+      oldest-first by <code>creationDate</code> and picked one by one, skipping any whose
+      <strong>rule</strong> already has 5 picks in the pool, or whose <strong>file</strong> already has 3.
+      Both caps are global — counts persist as the loop moves between tiers. Deterministic; no LLM.
+      Justified by Baltes &amp; Ralph (2020): stratified quota sampling for diversity, oldest-first
+      for persistence, rule cap to prevent one noisy rule from dominating.
+    </p>
+    <div class="stage-body" id="pool-body"><em>Loading…</em></div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="stage-llm-c2" class="stage-card">
+    <h2>5 · LLM ranking — C2 (static features only)</h2>
+    <p class="stage-why">
+      Single Anthropic API call. Temperature = 0. The C2 input contains only SonarQube
+      properties and file-level quality metrics — <strong>no</strong> SonarQube severity, no
+      <code>impact_severity</code>, no <code>impact_quality</code>, no churn, no SATD, no blame.
+      The LLM emits <code>{issue_key, rank, llm_reasoning}</code> per alert. Ranks must be
+      a unique permutation of 1..N; duplicates cause the call to fail loudly. Severity in the
+      UI is always SonarQube's — the LLM never assigns a severity label.
+    </p>
+    <div class="stage-body" id="llm-c2-body"><em>Loading…</em></div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="stage-llm-c3" class="stage-card">
+    <h2>5 · LLM ranking — C3 (static + churn + SATD + blame)</h2>
+    <p class="stage-why">
+      Same prompt structure as C2 but the per-alert JSON adds 11 fields:
+      <code>file_commit_count, file_unique_authors, file_bus_factor, file_churn,
+      file_days_since_modified, file_age_days, file_satd_count, file_satd_text,
+      file_satd_age_days, file_satd_change_count, line_last_modified_days</code>. The C3 prompt
+      cites Nagappan &amp; Ball (2005), Kamei et al. (2013), Yamashita et al. (2015), and Bavota
+      &amp; Russo (2016) for empirical grounding. Same output schema as C2.
+    </p>
+    <div class="stage-body" id="llm-c3-body"><em>Loading…</em></div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="stage-display" class="stage-card">
+    <h2>6 · 15-alert display set (C1-anchored)</h2>
+    <p class="stage-why">
+      Selects exactly 15 alerts that appear in <strong>all three</strong> conditions. Same alerts,
+      three orderings. Walks C1 (SonarQube native order) top-to-bottom and picks until the
+      bucket budgets fill: <strong>HIGH=5, MEDIUM=7, LOW=3</strong>. Max 3 alerts per file.
+      C1-anchoring means the experimental question is "does the LLM re-order what
+      SonarQube considers most important?", not "do the rankings overlap at all?".
+    </p>
+    <div class="stage-body" id="display-body"><em>Loading…</em></div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="stage-diff" class="stage-card">
+    <h2>7 · C1 vs C2 vs C3 diff</h2>
+    <p class="stage-why">
+      For each of the 15 display-set alerts, side-by-side ranks across the three conditions
+      and the rank-shift. Positive shift = the alert moved <em>down</em> the list; negative =
+      moved <em>up</em>. Two reasoning columns (<code>llm_reasoning_c2</code>,
+      <code>llm_reasoning_c3</code>) show why the LLM ranked it where it did.
+    </p>
+    <div class="stage-body" id="diff-body"><em>Loading…</em></div>
+  </section>
+
+</div>
+
+<script>
+  window.RESEARCHER_CONFIG = {
+    projectId: {{ project_id | tojson }},
+  };
+</script>
+<script src="{{ url_for('static', filename='researcher.js') }}"></script>
+{% endblock %}

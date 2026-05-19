@@ -1,18 +1,3 @@
-"""
-Main pipeline orchestrator.
-
-Usage:
-  python main.py --project commons-lang
-  python main.py --project commons-lang --project schuberg-repo
-  python main.py --all
-  python main.py --project commons-lang --skip-sonarqube
-  python main.py --project commons-lang --skip-github
-  python main.py --project commons-lang --skip-satd
-  python main.py --project commons-lang --skip-llm
-  python main.py --project commons-lang --ui-only
-  python main.py --project commons-lang --ui
-"""
-
 import argparse
 import glob
 import logging
@@ -124,29 +109,18 @@ def enrich_issues(project_id: str) -> pd.DataFrame:
     else:
         log.warning("satd_comments.csv not found — SATD fields will be empty")
 
-    alert_churn_path = results_path / "alert_churn_metrics.csv"
-    if alert_churn_path.exists():
-        alert_churn = pd.read_csv(alert_churn_path)
-        issues = issues.merge(alert_churn, on="issue_key", how="left", suffixes=("", "_ac"))
-    else:
-        log.warning("alert_churn_metrics.csv not found — alert-level churn fields will be empty")
-
     final_cols = [
         "issue_key", "file_path", "file", "rule",
-        "severity", "severity_score", "impact_severity", "impact_quality", "type",
-        "message", "line", "effort", "debt", "tags", "creationDate", "status",
+        "impact_severity", "impact_quality", "type",
+        "message", "line", "effort",
         "bugs", "vulnerabilities", "code_smells", "violations",
-        "blocker_violations", "critical_violations", "major_violations",
-        "minor_violations", "info_violations",
-        "complexity", "cognitive_complexity", "functions", "duplicated_lines_density",
-        "sqale_index", "sqale_debt_ratio", "coverage", "lines",
-        "reliability_rating", "security_rating", "sqale_rating",
-        "commit_count", "unique_authors", "bus_factor",
-        "lines_added", "lines_deleted", "churn",
-        "days_since_modified", "file_age_days",
-        "satd_count", "satd_text", "satd_types",
-        "satd_age_days", "satd_change_count",
-        "line_last_modified_days", "line_author",
+        "complexity", "cognitive_complexity",
+        "sqale_index", "lines",
+        "reliability_rating", "security_rating",
+        "commit_count", "unique_authors",
+        "churn",
+        "days_since_modified",
+        "satd_count", "satd_text",
     ]
 
     for col in final_cols:
@@ -155,58 +129,47 @@ def enrich_issues(project_id: str) -> pd.DataFrame:
 
     issues = issues[final_cols]
 
-    # Check for Python-specific SATD schema (ML classifier only).
-    # Python repos (3-col SATD: satd_count, satd_text, satd_types)
-    # vs Java repos (6-col SATD: satd_{count,text,types,age_days,change_count} from SATDBailiff).
-    if "satd_types" not in issues.columns or issues["satd_types"].isna().all():
-        log.info("Python repo: satd_types, satd_age_days, satd_change_count set to null (ML classifier path, no lifecycle signals)")
-        issues["satd_types"] = None
-        issues["satd_age_days"] = None
-        issues["satd_change_count"] = None
+    # For Java repos: SATDBailiff produces satd_count and satd_text.
+    # For Python repos: ML classifier produces satd_count and satd_text.
+    # Lifecycle fields (satd_age_days, satd_change_count) are not passed to LLM input for consistency.
 
-    # Fill only numeric columns where 0 is a meaningful value.
-    # SATD and churn columns are preserved as null when LEFT JOIN finds no match—
-    # 0 would incorrectly signal absence of SATD/churn activity.
-    # E.g., commit_count=0 means the file genuinely had no commits in the window,
-    # but satd_count=0 means either no SATD exists OR no SATD extractor ran.
+    # Fill numeric columns where 0 is a meaningful value.
+    # GitHub activity columns (commit_count, unique_authors, churn, days_since_modified)
+    # and SATD columns (satd_count, satd_text) are preserved as null when no data is found,
+    # because null means unknown/unavailable — not the same as zero activity.
     numeric_fill_with_zero = [
         "bugs", "vulnerabilities", "code_smells", "violations",
-        "blocker_violations", "critical_violations", "major_violations",
-        "minor_violations", "info_violations",
-        "complexity", "cognitive_complexity", "functions", "duplicated_lines_density",
-        "sqale_index", "sqale_debt_ratio", "coverage", "lines",
-        "commit_count", "unique_authors", "bus_factor",
-        "lines_added", "lines_deleted", "churn",
-        "days_since_modified", "file_age_days",
+        "complexity", "cognitive_complexity",
+        "sqale_index", "lines",
     ]
     for col in numeric_fill_with_zero:
         if col in issues.columns:
             issues[col] = issues[col].fillna(0)
 
-    # SATD and churn columns preserve null (no fill):
-    # satd_count, satd_age_days, satd_change_count (remain null if no SATD extractor output)
-    # line_last_modified_days (remains null if no blame data available)
+    # SATD columns preserve null (no fill):
+    # satd_count and satd_text remain null if no SATD extractor output.
 
     out_path = results_path / "enriched_issues.csv"
     issues.to_csv(out_path, index=False)
     log.info(f"enriched_issues.csv written: {len(issues)} issues")
 
-    # Rebuild ranking_c1.csv from fully-enriched data so the UI has file-level metrics
-    # (complexity, coverage, etc.) in the C1 list — the extractor writes a metric-less
-    # preliminary version; this overwrites it with the complete enriched columns.
-    _rebuild_c1_ranking(results_path, issues)
-
     return issues
 
 
 def _rebuild_c1_ranking(results_path: Path, enriched: pd.DataFrame) -> None:
-    # sonarqube_issues.csv was fetched with s=SEVERITY&asc=false so it already carries
-    # SonarQube's exact ordering. enriched_issues.csv preserves that order via LEFT JOINs
-    # (pandas merge with how="left" keeps the left-frame order). Just re-assign rank numbers.
-    df = enriched.copy().reset_index(drop=True)
-    df["c1_rank"] = df.index + 1
+    pool_path = results_path / "alert_pool_50.csv"
+    if not pool_path.exists():
+        raise FileNotFoundError(
+            f"{pool_path} not found — ranking_c1.csv requires the pool. "
+            "Run the pool builder (Step 4b) before re-enrichment."
+        )
+    pool = pd.read_csv(pool_path)
+    pool_rank_map = dict(zip(pool["issue_key"].astype(str), pool["pool_rank"]))
+    df = enriched[enriched["issue_key"].astype(str).isin(set(pool_rank_map))].copy()
+    df["c1_rank"] = df["issue_key"].astype(str).map(pool_rank_map)
+    df = df.sort_values("c1_rank").reset_index(drop=True)
     df.to_csv(results_path / "ranking_c1.csv", index=False)
-    log.info(f"ranking_c1.csv rebuilt from enriched data: {len(df)} issues")
+    log.info(f"ranking_c1.csv rebuilt from pool members: {len(df)} issues")
 
 
 def write_run_summary(project_id: str, config: dict, results: dict, start_time: float) -> None:
@@ -324,6 +287,25 @@ def run_project(
         log.error(f"enrich_issues failed: {e}")
         component_results["enrich"] = f"FAILED: {e}"
 
+    # Step 4b: Build 50-alert stratified pool and enriched pool
+    try:
+        from components.pool_builder import run as build_pool
+        build_pool(project_id, results_path)
+        pool = pd.read_csv(results_path / "alert_pool_50.csv")
+        enriched_all = pd.read_csv(results_path / "enriched_issues.csv")
+        pool_keys = set(pool["issue_key"].astype(str))
+        pool_enriched = enriched_all[enriched_all["issue_key"].astype(str).isin(pool_keys)].copy()
+        pool_rank_map = dict(zip(pool["issue_key"].astype(str), pool["pool_rank"]))
+        pool_enriched["pool_rank"] = pool_enriched["issue_key"].astype(str).map(pool_rank_map)
+        pool_enriched = pool_enriched.sort_values("pool_rank").reset_index(drop=True)
+        pool_enriched.to_csv(results_path / "enriched_pool_50.csv", index=False)
+        log.info(f"enriched_pool_50.csv written: {len(pool_enriched)} issues")
+        # C1 ranking is now generated directly by pool_builder.py from the 50-alert pool
+        component_results["pool"] = f"OK ({len(pool_enriched)} alerts)"
+    except Exception as e:
+        log.error(f"Pool builder failed: {e}")
+        component_results["pool"] = f"FAILED: {e}"
+
     # Step 5: LLM ranking
     if not skip_llm and config["components"].get("run_llm_ranking"):
         try:
@@ -334,8 +316,18 @@ def run_project(
         except Exception as e:
             log.error(f"LLM ranker failed: {e}")
             component_results["llm"] = f"FAILED: {e}"
+            raise  # Fatal: display_set_builder cannot run without valid C2/C3 rankings
     else:
         component_results["llm"] = "SKIPPED"
+
+    # Step 6: Build 15-alert display set
+    try:
+        from components.display_set_builder import run as build_display_set
+        build_display_set(project_id, results_path)
+        component_results["display_set"] = "OK"
+    except Exception as e:
+        log.error(f"Display set builder failed: {e}")
+        component_results["display_set"] = f"FAILED: {e}"
 
     write_run_summary(project_id, config, component_results, start)
     log.info(f"=== Done: {project_id} ({time.time() - start:.1f}s) ===")

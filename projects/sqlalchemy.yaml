@@ -1,14 +1,6 @@
 project_id: "sqlalchemy"
 project_display_name: "SQLAlchemy"
-
-# Scanned from sqlalchemy/sqlalchemy rel_2_0_35 (Sep 2024).
-# SonarQube analysis run May 2026 — creationDate reflects analysis date, not code date.
-# Both bounds null: fetch all open issues.
-# 1,603 total issues (BLOCKER:76, CRITICAL:516, MAJOR:629, MINOR:222, INFO:160).
-# Includes 41 VULNERABILITYs (hardcoded DB credentials in dialect/test fixture code).
-time_period:
-  start_date: null
-  end_date: null
+language: python  # skips SATDBailiff (Java-only); ML classifier handles Python comments
 
 sonarqube:
   host: "http://localhost:9000"

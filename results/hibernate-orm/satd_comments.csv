@@ -1,0 +1,934 @@
+file_path,satd_count,satd_text,satd_age_days,satd_change_count
+annotations/src/java/org/hibernate/annotations/Sort.java,1,TODO find a way to use Class<Comparator>,6404,0
+annotations/src/java/org/hibernate/cfg/AbstractPropertyHolder.java,1,FIXME is embeddable override?,6404,0
+annotations/src/java/org/hibernate/cfg/AnnotationBinder.java,9,"FIXME implements uniqueconstrains | FIXME: work on initialValue() through SequenceGenerator.PARAMETERS | TODO: be more strict with secondarytable allowance (not for ids, not for secondary table join columns etc) | FIXME support a proper PKJCs | TODO enhance exception with @ManyToAny and @CollectionOfElements | TODO move that to collection binder? | FIXME: proper support of typevariables incl var resolved at upper levels | is a true one-to-one
+FIXME referencedColumnName ignored => ordering may fail. | the classes are ordered thus preventing an NPE
+FIXME if an entity has subclasses annotated @MappedSperclass wo sub @Entity this is wrong",6404,1
+annotations/src/java/org/hibernate/cfg/AnnotationConfiguration.java,3,"TODO search for the method only once and cache it? | TODO so much duplication | TODO remove this together with SearchConfiguration after 3.1.0 release of Search
+try loading deprecated HibernateSearchEventListenerRegister",6404,0
+annotations/src/java/org/hibernate/cfg/annotations/CollectionBinder.java,11,"TODO consider using an XClass | TODO reducce tableBinder != null and oneToMany | FIXME make this code decent | TODO : Check that. Maybe order by key for maps | TODO: only for implicit columns?
+FIXME NamingStrategy | FIXME support @Access for collection of elements | TODO be smart with isNullable | TODO create an EMPTY_JOINS collection | FIXME: do optional = false | TODO always a many to one?",6404,0
+annotations/src/java/org/hibernate/cfg/annotations/EntityBinder.java,3,"somehow keep joins() for later.
+Has to do the work later because it needs persistentClass id! | perhaps not quite per-spec, but a Good Thing anyway | maybe a join/secondary table",6404,0
+annotations/src/java/org/hibernate/cfg/annotations/MapBinder.java,7,"this is a true Map mapping
+TODO ugly copy/pastle from CollectionBinder.bindManyToManySecondPass | FIXME support @Access for collection of elements | TODO be smart with isNullable | TODO create an EMPTY_JOINS collection | FIXME pass the Index Entity JoinColumns | TODO this never happen I think | TODO I don't know if this is appropriate",6404,0
+annotations/src/java/org/hibernate/cfg/annotations/PropertyBinder.java,2,TODO check necessary params for a make | TODO this should go to the core as a mapping validation checking,6404,0
+annotations/src/java/org/hibernate/cfg/annotations/QueryBinder.java,2,"class mapping usage
+FIXME should be done in a second pass due to entity name?",6404,0
+annotations/src/java/org/hibernate/cfg/annotations/reflection/EJB3OverridenAnnotationReader.java,7,"FIXME use annotationsMap rather than annotationList this will be faster since the annotation type is usually known at put() time | precompute the list of properties
+TODO is it really useful... | TODO mutualize the next 2 methods | FIXME: fix the priority of xml over java for generator names | TODO wonder whether it should be excluded so that user can undone it | FIXME there is never such a result-class, get rid of it? | TODO avoid the Proxy Creation (@NamedQueries) when possible",6404,0
+annotations/src/java/org/hibernate/cfg/annotations/reflection/XMLContext.java,2,maybe switch it to warn? | TODO fix that in stone if cascade-persist is set already?,6404,0
+annotations/src/java/org/hibernate/cfg/annotations/ResultsetMappingSecondPass.java,2,TODO add parameters checkings | TODO parameterize lock mode?,6404,0
+annotations/src/java/org/hibernate/cfg/annotations/SimpleValueBinder.java,3,TODO execute it lazily to be order safe | FIXME raise an assertion failure  if setExplicitType(String) and setExplicitType(Type) are use at the same time | TODO check necessary params,6404,0
+annotations/src/java/org/hibernate/cfg/annotations/TableBinder.java,1,TODO move it to a getter/setter strategy,6404,0
+annotations/src/java/org/hibernate/cfg/BinderHelper.java,5,"todo how about properties.size() == 1, this should be much simpler | TODO use a ToOne type doing a second select | first naive implementation
+only check 1 columns properties
+TODO make it smarter by checking correctly ordered multi column properties | FIXME cannot use subproperties becasue the caller needs top level properties | yuk! this is a hack not to override 'AUTO' even if generator is set",6404,0
+annotations/src/java/org/hibernate/cfg/ClassPropertyHolder.java,1,TODO move the getJoin() code here?,6404,0
+annotations/src/java/org/hibernate/cfg/ComponentPropertyHolder.java,2,"TODO introduce a overrideTable() method for columns held by sec table rather than the hack
+joinsPerRealTableName in ClassPropertyHolder | FIXME this is yukky",6404,0
+annotations/src/java/org/hibernate/cfg/DefaultComponentSafeNamingStrategy.java,1,use of a stringbuffer to workaround a JDK bug,6404,0
+annotations/src/java/org/hibernate/cfg/Ejb3JoinColumn.java,4,"FIXME hacky solution to get the information at property ref resolution | FIXME default name still useful in association table | FIXME shouldn't we deduce the classname from the persistentclasS? | keep it JDK 1.4 compliant
+implicit way",6404,1
+annotations/src/java/org/hibernate/cfg/EJB3NamingStrategy.java,1,use of a stringbuffer to workaround a JDK bug,6404,0
+annotations/src/java/org/hibernate/cfg/IndexColumn.java,2,FIXME move to a getter setter strategy for readeability | TODO move it to a getter based system and remove the constructor,6404,1
+annotations/src/java/org/hibernate/cfg/OneToOneSecondPass.java,4,"TODO refactor this code, there is a lot of duplication in this method | FIXME use ignore not found here | TODO support @ForeignKey | TODO support for inverse and optional
+perhaps not quite per-spec, but a Good Thing anyway",6404,0
+annotations/src/java/org/hibernate/cfg/search/HibernateSearchEventListenerRegister.java,1,TODO Generalize this. Pretty much the same code all the time. Reflecetion?,6404,1
+annotations/src/main/java/org/hibernate/cfg/AbstractPropertyHolder.java,2,"support for non map collections where no prefix is needed
+TODO cache the underlying regexp",5963,0
+annotations/src/main/java/org/hibernate/cfg/AccessType.java,1,TODO historically if the type string could not be matched default access was used. Maybe this should be an exception though!?,5989,0
+annotations/src/main/java/org/hibernate/cfg/AnnotationBinder.java,6,"Queries declared in MappedSuperclass should be usable in Subclasses | FIXME shouldn't identifier mapper use getClassOrElementName? Need to be checked. | FIXME implement uniqueconstrains | See comment on HHH-4884 wrt initialValue.  Basically initialValue is really the stated value + 1 | In JPA 2, there is a shortcut if the IdClass is the Pk of the associated class pointed to by the id
+it ought to be treated as an embedded and not a real IdClass (at least in the Hibernate's internal w | TODO I think this branch is never used. Remove.",6075,0
+annotations/src/main/java/org/hibernate/cfg/AnnotationConfiguration.java,2,FIXME should be private but is part of the ExtendedMapping contract,6039,0
+annotations/src/main/java/org/hibernate/cfg/annotations/EntityBinder.java,1,todo : throw an error?,6000,0
+annotations/src/main/java/org/hibernate/cfg/annotations/PropertyBinder.java,2,"if an xToMany, it as to be wrapped today.
+FIXME this pose a problem as the PK is the class instead of the associated class which is not really compliant with the spec | FIXME is it good enough?",5950,0
+annotations/src/main/java/org/hibernate/cfg/beanvalidation/BeanValidationActivator.java,1,"de-activate not-null tracking at the core level when Bean Validation
+is present unless the user really asks for it
+Note that if BV is not present, the behavior is backward compatible",5960,0
+annotations/src/main/java/org/hibernate/cfg/beanvalidation/BeanValidationEventListener.java,2,FIXME review exception model | null is bad and excluded by instanceof => exception is raised,6221,0
+annotations/src/main/java/org/hibernate/cfg/beanvalidation/TypeSafeActivator.java,1,FIXME add collection of components,6214,0
+annotations/src/main/java/org/hibernate/cfg/BinderHelper.java,1,YUCK!  but cannot think of a clean way to do this given the string-config based scheme,5998,0
+annotations/src/main/java/org/hibernate/cfg/CopyIdentifierComponentSecondPass.java,2,FIXME set optional? | FIXME take care of Formula,5949,0
+annotations/src/main/java/org/hibernate/cfg/Ejb3Column.java,1,TODO force to not null if available? This is a (bad) user choice.,5858,0
+annotations/src/main/java/org/hibernate/cfg/IndexColumn.java,1,TODO move it to a getter based system and remove the constructor,6137,1
+annotations/src/main/java/org/hibernate/cfg/PropertyContainer.java,1,TODO make those hardcoded tests more portable (through the bytecode provider?),5989,0
+annotations/src/main/java/org/hibernate/type/WrappedMaterializedBlobType.java,1,todo name these annotation types for addition to the registry,5854,0
+annotations/src/test/java/org/hibernate/test/annotations/beanvalidation/BeanValidationGroupsTest.java,1,TODO - seems this explicit case is necessary with JDK 5 (at least on Mac). With Java 6 there is no problem,6209,0
+annotations/src/test/java/org/hibernate/test/annotations/beanvalidation/HibernateTraversableResolverTest.java,2,toString works since hibernate validator's Path implementation works accordingly. Should do a Path comparison though,6163,0
+annotations/src/test/java/org/hibernate/test/annotations/collectionelement/Boy.java,1,"TODO migration to ElementCollection \""element.serial\""??",6213,0
+annotations/src/test/java/org/hibernate/test/annotations/collectionelement/indexedCollection/Sale.java,1,"TODO migrate to @ElementCollection, what about @CollectionId",6213,0
+annotations/src/test/java/org/hibernate/test/annotations/derivedidentities/e1/b2/IdClassGeneratedValueManyToOneTest.java,1,"why does this cause a failure?
+Customer c2 = new Customer(",5934,0
+annotations/src/test/java/org/hibernate/test/annotations/embedded/WealthyPerson.java,1,"@CollectionTable(name=\""XXXHOMES\"")",5970,0
+annotations/src/test/java/org/hibernate/test/annotations/lob/CharacterArrayTextType.java,1,todo name these annotation types for addition to the registry,5854,0
+annotations/src/test/java/org/hibernate/test/annotations/lob/PrimitiveCharacterArrayTextType.java,1,todo name these annotation types for addition to the registry,5854,0
+annotations/src/test/java/org/hibernate/test/annotations/lob/SerializableToImageType.java,1,todo name these annotation types for addition to the registry,5854,0
+annotations/src/test/java/org/hibernate/test/annotations/lob/WrappedImageType.java,1,todo name these annotation types for addition to the registry,5854,0
+annotations/src/test/org/hibernate/test/annotations/AlternativeNamingStrategy.java,1,use of a stringbuffer to workaround a JDK bug,6404,0
+annotations/src/test/org/hibernate/test/annotations/cascade/CascadeTest.java,1,FIXME do somthing for refresh,6404,0
+annotations/src/test/org/hibernate/test/annotations/cid/CompositeIdTest.java,2,FIXME mke it work in unambigious cases,6404,0
+annotations/src/test/org/hibernate/test/annotations/collectionelement/CollectionElementTest.java,1,TODO: doesn't work,6404,0
+annotations/src/test/org/hibernate/test/annotations/collectionelement/CountryAttitude.java,1,"TODO: This currently does not work
+@ManyToOne(optional = false)",6404,0
+annotations/src/test/org/hibernate/test/annotations/entity/MonetaryAmountUserType.java,1,TODO: improve,6404,0
+annotations/src/test/org/hibernate/test/annotations/identifiercollection/Passport.java,1,TODO test identity generator,6404,0
+annotations/src/test/org/hibernate/test/annotations/idmanytoone/IdManyToOneTest.java,1,TODO test Customers / ShoppingBaskets / BasketItems testIdClassManyToOneWithReferenceColumn,6404,0
+annotations/src/test/org/hibernate/test/annotations/inheritance/SubclassTest.java,1,subclasses should be properly reordered,6404,0
+annotations/src/test/org/hibernate/test/annotations/inheritance/Tomato.java,1,"FIXME HBX-55 default for composite PK does not work yet
+FIXME Tomato is a fruit",6404,0
+annotations/src/test/org/hibernate/test/annotations/join/Cat.java,1,"Bug HHH-36
+@OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER)
+@JoinColumn(name=\""CAT_ID\"", secondaryTable=\""ExtendedLife\"")",6404,0
+annotations/src/test/org/hibernate/test/annotations/manytoone/ManyToOneTest.java,1,FIXME: fix this when the small parser bug will be fixed,6404,0
+annotations/src/test/org/hibernate/test/annotations/query/QueryAndSQLTest.java,1,FIXME vary depending on databases,6404,0
+annotations/src/test/org/hibernate/test/annotations/type/MyOidType.java,1,todo is this correct?,6404,0
+annotations/src/test/org/hibernate/test/annotations/various/IndexTest.java,1,TODO find a way to test indexes???,6404,0
+buildSrc/src/main/java/org/hibernate/build/gradle/upload/AuthenticationHandler.java,1,todo : unfortunately I have no idea how to apply this to non MavenDeployer-type repos...,5571,0
+buildSrc/src/main/java/org/hibernate/build/gradle/upload/UploadAuthenticationManager.java,2,"todo : ideally the registry would be handled by a convention to allow configuration (aka, adding more providers)...
+for our purposes here in Hibernate we only care about the Maven settings.xml based w | todo: Also in conjunction, would be best to have the handler lookup the registry rather than pushing it",5571,0
+cache-infinispan/src/main/java/org/hibernate/cache/infinispan/access/PutFromLoadValidator.java,3,"Process the overage queue until we find an item to clean
+or an incomplete item that hasn't aged out | This lock should be available very quickly, but we'll be
+very patient waiting for it as callers should treat not
+acquiring it as an exception condition | Something's gone wrong and the lock isn't being released.
+We removed toClean from the queue and need to restore it
+TODO this is pretty dodgy",6018,0
+cache-infinispan/src/main/java/org/hibernate/cache/infinispan/impl/BaseRegion.java,1,"If copying causes issues, provide a lazily loaded Map",6018,0
+cache-infinispan/src/main/java/org/hibernate/cache/infinispan/timestamp/TimestampsRegionImpl.java,2,TODO Is this a valid operation on a timestamps cache?,6107,0
+cache-infinispan/src/test/java/org/hibernate/test/cache/infinispan/functional/cluster/DualNodeJtaTransactionImpl.java,4,"todo : find the spec-allowable statuses during which synch can be registered... | todo we only support one phase commit for now, change this!!! | todo implement!!!",6107,0
+cache-infinispan/src/test/java/org/hibernate/test/cache/infinispan/functional/cluster/EntityCollectionInvalidationTestCase.java,1,"Sleep a bit to let async commit propagate. Really just to
+help keep the logs organized for debugging any issues",6107,0
+cache-infinispan/src/test/java/org/hibernate/test/cache/infinispan/tm/XaTransactionImpl.java,4,"todo : find the spec-allowable statuses during which synch can be registered... | todo we only support one phase commit for now, change this!!! | todo implement!!!",6107,0
+cache-jbosscache2/src/main/java/org/hibernate/cache/jbc2/BasicRegionAdapter.java,3,"cache-mode-local option bit...
+(2) really just trying a best effort to cleanup after | FIXME Hacky workaround to JBCACHE-1202 | If we've been blocking for the mutex, perhaps another
+thread has already reestablished the root.
+In case the node was reestablised via replication, confirm it's
+marked \""resident\"" (a status which doe",6866,0
+cache-jbosscache2/src/main/java/org/hibernate/cache/jbc2/timestamp/TimestampsRegionImpl.java,1,TODO Why not use the timestamp in a DataVersion?,6779,0
+cache-jbosscache2/src/main/java/org/hibernate/cache/jbc2/util/CacheHelper.java,1,FIXME hack to work around fact that calling,6780,0
+cache-jbosscache2/src/test/java/org/hibernate/test/cache/jbc2/functional/PessimisticEntityReplicationTest.java,1,"Sleep a bit to let async commit propagate. Really just to
+help keep the logs organized for debugging any issues",6650,0
+code/cache-ehcache/src/main/java/org/hibernate/cache/EhCacheProvider.java,1,"yukky! Don't you have subclasses for that!
+TODO race conditions can happen here",6891,0
+code/core/src/main/java/org/hibernate/action/EntityIdentityInsertAction.java,1,"TODO: this bit actually has to be called after all cascades!
+but since identity insert is called *synchronously*,
+instead of asynchronously as other actions, it isn't",6891,0
+code/core/src/main/java/org/hibernate/action/EntityUpdateAction.java,1,TODO: inefficient if that cache is just going to ignore the updated state!,6891,0
+code/core/src/main/java/org/hibernate/bytecode/cglib/ProxyFactoryFactoryImpl.java,1,todo : what else to do here?,6891,0
+code/core/src/main/java/org/hibernate/bytecode/javassist/ProxyFactoryFactoryImpl.java,1,todo : what else to do here?,6891,0
+code/core/src/main/java/org/hibernate/bytecode/javassist/TransformingClassLoader.java,1,todo : modify the class definition if not already transformed...,6891,0
+code/core/src/main/java/org/hibernate/cache/entry/CacheEntry.java,2,"TODO: reuse the PreLoadEvent | this should be refactored to instead expose a method to assemble a EntityEntry based on this
+state for return.",6891,0
+code/core/src/main/java/org/hibernate/cache/entry/CollectionCacheEntry.java,1,TODO: assumes all collections disassemble to an array!,6891,0
+code/core/src/main/java/org/hibernate/cache/StandardQueryCache.java,1,"TODO: not really completely correct, since
+the uoe could occur while resolving
+associations, leaving the PC in an
+inconsistent state",6891,0
+code/core/src/main/java/org/hibernate/cache/UpdateTimestampsCache.java,5,"TODO: to handle concurrent writes correctly, this should return a Lock to the client | put() has nowait semantics, is this really appropriate?
+note that it needs to be async replication, never local or sync | TODO: to handle concurrent writes correctly, the client should pass in a Lock | TODO: if lock.getTimestamp().equals(ts)",6891,0
+code/core/src/main/java/org/hibernate/cfg/Configuration.java,3,"Icky workaround for MySQL bug: | TODO: Somehow add the newly created foreign keys to the internal collection | todo : would love to have this work on a notification basis
+where the successful binding of an entity/subclass would
+emit a notification which the extendsQueue entries could
+react to...",6891,0
+code/core/src/main/java/org/hibernate/cfg/DefaultNamingStrategy.java,1,use of a stringbuffer to workaround a JDK bug,6891,0
+code/core/src/main/java/org/hibernate/cfg/HbmBinder.java,18,"TODO: | todo : what is the implication of this? | use COUNT as the default.  This mimics the old behavior, although
+NONE might be a better option moving forward in the case of callable | table=null -> an association
+- fill it in later
+TODO fill in the mappings for table == null | table=null -> an association - fill
+it in later
+TODO fill in the mappings for table == null | TODO: joinKeyColumnName & foreignKeyColumnName should be called either here or at a
+slightly higer level in the stack (to get all the information we need)
+Right now HbmBinder does not support the | TODO: this fails if we run with debug on! | TODO: suck this into initLaziness! | we have to set up the table later!! yuck | TODO mappings.getLogicalTableName(ownerTable) | FIXME we don't have the associated entity table name here, has to be done in a second pass | TODO: better to degrade to lazy=\""false\"" if uninstrumented | TODO: really bad, evil hack to fix!!! | todo : again, how *should* this work for non-pojo entities? | TODO: handle TypeDefs | this is done here 'cos we might only know the type here (ugly!)
+TODO: improve this a lot: | TODO: this is a bit of copy/paste from IndexedCollection.createPrimaryKey() | TODO: bad implementation, cos it depends upon ordering of mapping doc
+fixing this requires that Collection/PersistentClass gain access
+to the Mappings reference from Configuration (or the filterDefini",6891,0
+code/core/src/main/java/org/hibernate/cfg/ImprovedNamingStrategy.java,1,use of a stringbuffer to workaround a JDK bug,6891,0
+code/core/src/main/java/org/hibernate/cfg/Mappings.java,1,TODO possibly relax that,6891,0
+code/core/src/main/java/org/hibernate/cfg/NamedSQLQuerySecondPass.java,1,TODO check there is no actual definition elemnents when a ref is defined,6891,0
+code/core/src/main/java/org/hibernate/cfg/ResultSetMappingBinder.java,8,"hack/workaround as sqlquery impl depend on having a key. | TODO: bindpropertyresults(alias, returnElem) | FIXME: get the PersistentClass | maybe a concrete SQLpropertyresult type, but Map is exactly what is required at the moment | TODO: validate existing of property with the chosen name. (secondpass ) | here puts everything under 'element' (which additionally has significant
+meaning).  Probably what we need to do is to something like this instead: | }
+}
+}
+but I am not clear enough on the intended purpose of this code block, especially
+in relation to the \""Reorder properties\"" code block above...",6891,0
+code/core/src/main/java/org/hibernate/collection/PersistentArrayHolder.java,1,"just to help out during the load (ugly, i know)",6891,0
+code/core/src/main/java/org/hibernate/collection/PersistentBag.java,1,"it is *really* a set, since it can't contain the
+same element twice. It could be considered a bug
+in the mapping dtd that <bag> allows <one-to-many>.",6891,0
+code/core/src/main/java/org/hibernate/collection/PersistentIdentifierBag.java,2,"TODO: native ids | TODO: if we are using identity columns, fetch the identifier",6891,0
+code/core/src/main/java/org/hibernate/collection/PersistentMap.java,2,"would be better to use the element-type to determine | TODO : safe to interpret \""map.remove(key) == null\"" as non-dirty?",6891,0
+code/core/src/main/java/org/hibernate/collection/PersistentSet.java,1,"note that it might be better to iterate the snapshot but this is safe,
+assuming the user implements equals() properly, as required by the Set
+contract!",6891,0
+code/core/src/main/java/org/hibernate/criterion/BetweenExpression.java,1,TODO: get SQL rendering out of this package!,6891,0
+code/core/src/main/java/org/hibernate/criterion/Example.java,3,"TODO: get all properties, not just the fetched ones! | yuck!",6891,0
+code/core/src/main/java/org/hibernate/criterion/IdentifierEqExpression.java,1,TODO: get SQL rendering out of this package!,6891,0
+code/core/src/main/java/org/hibernate/criterion/IlikeExpression.java,1,TODO: get SQL rendering out of this package!,6891,0
+code/core/src/main/java/org/hibernate/criterion/NotNullExpression.java,1,TODO: get SQL rendering out of this package!,6891,0
+code/core/src/main/java/org/hibernate/criterion/NullExpression.java,1,TODO: get SQL rendering out of this package!,6891,0
+code/core/src/main/java/org/hibernate/criterion/PropertyExpression.java,1,TODO: get SQL rendering out of this package!,6891,0
+code/core/src/main/java/org/hibernate/criterion/SizeExpression.java,1,TODO: handle property-ref,6891,0
+code/core/src/main/java/org/hibernate/dialect/Cache71Dialect.java,2,"aggregate functions shouldn't be registered, right? | Does the LIMIT clause take a \""maximum\"" row number instead of a total number of returned rows?",6891,0
+code/core/src/main/java/org/hibernate/dialect/FrontBaseDialect.java,1,"TODO : not sure this is correct, could not find docs on how to do this.",6891,0
+code/core/src/main/java/org/hibernate/dialect/function/CastFunction.java,1,"TODO: never reached, since getTypeName() actually throws an exception!",6891,0
+code/core/src/main/java/org/hibernate/dialect/function/SQLFunctionRegistry.java,1,TODO: toLowerCase was not done before. Only used in Template.,6891,0
+code/core/src/main/java/org/hibernate/dialect/lock/UpdateLockingStrategy.java,1,todo : should we additionally check the current isolation mode explicitly?,6891,0
+code/core/src/main/java/org/hibernate/dialect/PostgreSQLDialect.java,2,TODO: RESTRICT VIOLATION | seems to not really...,6891,0
+code/core/src/main/java/org/hibernate/dialect/RDMSOS2200Dialect.java,1,The where clause was added to eliminate this statement from Brute Force Searches.,6891,0
+code/core/src/main/java/org/hibernate/engine/ActionQueue.java,1,"Actually the semantics of the next three are really \""Bag\""
+Note that, unlike objects, collection insertions, updates,
+deletions are not really remembered between flushes. We
+just re-use the same List",6891,0
+code/core/src/main/java/org/hibernate/engine/BatchFetchQueue.java,2,"this only works because collection entries are kept in a sequenced
+map by persistence context (maybe we should do like entities and
+keep a separate sequences set...)
+TODO: calling entrySet on an Ident | TODO: this needn't exclude subclasses...",6891,0
+code/core/src/main/java/org/hibernate/engine/Cascade.java,1,TODO: suck this logic into the collection!,6891,0
+code/core/src/main/java/org/hibernate/engine/CascadingAction.java,2,"TODO: should orphans really be deleted during lock??? | merges don't cascade to uninitialized collections
+//TODO: perhaps this does need to cascade after all....",6891,0
+code/core/src/main/java/org/hibernate/engine/CollectionEntry.java,1,"TODO: does this really need to be here?
+does the collection already have
+it's own up-to-date snapshot?",6891,0
+code/core/src/main/java/org/hibernate/engine/Collections.java,1,TODO: better to pass the id in as an argument?,6891,0
+code/core/src/main/java/org/hibernate/engine/EntityEntry.java,1,todo : potentially look at optimizing these two arrays,6891,0
+code/core/src/main/java/org/hibernate/engine/EntityUniqueKey.java,1,"The unique property value represented here may or may not be
+serializable, so we do an explicit check here in order to generate
+a better error message",6891,0
+code/core/src/main/java/org/hibernate/engine/ForeignKeys.java,1,this is kinda the best we can do...,6891,0
+code/core/src/main/java/org/hibernate/engine/JoinHelper.java,1,"it is possible that the tree-walking in OuterJoinLoader can get to
+an association defined by a subclass, in which case the property-ref
+might refer to a property defined on a subclass of the current c",6891,0
+code/core/src/main/java/org/hibernate/engine/JoinSequence.java,1,TODO: not quite sure about the full implications of this!,6891,0
+code/core/src/main/java/org/hibernate/engine/loading/CollectionLoadContext.java,3,"important, to account for newly saved entities in query
+todo : some kind of check for new status... | todo : i'd much rather have this done from #endLoadingCollection(CollectionPersister,LoadingCollectionEntry)... | todo : hack!!!
+NOTE : here we cleanup the load context when we have no more local
+LCE entries.  This \""works\"" for the time being because really
+only the collection load contexts are implemented.  Lon",6891,0
+code/core/src/main/java/org/hibernate/engine/loading/EntityLoadContext.java,1,"todo : need map? the prob is a proper key, right?",6891,0
+code/core/src/main/java/org/hibernate/engine/loading/LoadContexts.java,1,"todo : should really move this log statement to CollectionType, where this is used from...",6891,1
+code/core/src/main/java/org/hibernate/engine/query/HQLQueryPlan.java,2,TODO : keep seperate notions of QT[] here for shallow/non-shallow queries... | TODO : add this info to the translator and aggregate it here...,6891,1
+code/core/src/main/java/org/hibernate/engine/SessionImplementor.java,1,TODO: temporary,6891,0
+code/core/src/main/java/org/hibernate/engine/StatefulPersistenceContext.java,2,TODO:refactor + make this method private | todo : we can actually just determine this from the incoming EntityEntry-s,6891,0
+code/core/src/main/java/org/hibernate/engine/SubselectFetch.java,1,TODO: ugly here:,6891,0
+code/core/src/main/java/org/hibernate/engine/TwoPhaseLoad.java,1,TODO: Should this be an InitializeEntityEventListener??? (watch out for performance!),6891,0
+code/core/src/main/java/org/hibernate/engine/Versioning.java,1,"This next bit is to allow for both unsaved-value=\""negative\""
+and for \""older\"" behavior where version number did not get
+seeded if it was already set in the object
+TODO: shift it into unsaved-value s",6891,0
+code/core/src/main/java/org/hibernate/event/def/AbstractFlushingEventListener.java,2,"safe from concurrent modification because of how entryList() is implemented on IdentityMap | So this needs to be safe from concurrent modification problems.
+It is safe because of how IdentityMap implements entrySet()",6891,0
+code/core/src/main/java/org/hibernate/event/def/AbstractLockUpgradeEventListener.java,1,todo : should we check the current isolation mode explicitly?,6891,0
+code/core/src/main/java/org/hibernate/event/def/AbstractSaveEventListener.java,1,TODO: define toString()s for generators,6891,0
+code/core/src/main/java/org/hibernate/event/def/DefaultFlushEntityEventListener.java,3,"TODO: avoid this for non-new instances where mightBeDirty==false | TODO: suck into event class | TODO: optimize away this lookup for entities w/o unsaved-value=\""undefined\""",6891,0
+code/core/src/main/java/org/hibernate/event/def/DefaultLoadEventListener.java,1,"PostLoad is needed for EJB3
+TODO: reuse the PostLoadEvent...",6891,0
+code/core/src/main/java/org/hibernate/event/def/DefaultLockEventListener.java,1,"TODO: if object was an uninitialized proxy, this is inefficient,
+resulting in two SQL selects",6891,0
+code/core/src/main/java/org/hibernate/event/def/DefaultMergeEventListener.java,4,"TODO: check that entry.getIdentifier().equals(requestedId) | TODO: we should throw an exception if we really *know* for sure
+that this is a detached instance, rather than just assuming | TODO : perhaps we should additionally require that the incoming entity
+version be equivalent to the defined unsaved-value? | perhaps this should be an exception since it is only ever used
+in the above method?",6891,0
+code/core/src/main/java/org/hibernate/event/def/DefaultPersistEventListener.java,2,TODO: check that entry.getIdentifier().equals(requestedId) | TODO: merge into one method!,6891,0
+code/core/src/main/java/org/hibernate/event/def/DefaultReplicateEventListener.java,2,"TODO: would it be better to do a refresh from db? | TODO: we use two visitors here, inefficient!",6891,0
+code/core/src/main/java/org/hibernate/event/def/DefaultSaveEventListener.java,1,"this implementation is supposed to tolerate incorrect unsaved-value
+mappings, for the purpose of backward-compatibility",6891,0
+code/core/src/main/java/org/hibernate/event/def/DefaultSaveOrUpdateEventListener.java,2,"TODO: assertion only, could be optimized away | TODO: put this stuff back in to read snapshot from
+the second-level cache (needs some extra work)",6891,0
+code/core/src/main/java/org/hibernate/event/def/DefaultUpdateEventListener.java,1,"this implementation is supposed to tolerate incorrect unsaved-value
+mappings, for the purpose of backward-compatibility",6891,0
+code/core/src/main/java/org/hibernate/event/def/DirtyCollectionSearchVisitor.java,1,"if not wrappered yet, its dirty (this can't occur, because
+we now always call wrap() before getting to here)
+return ( ! (obj instanceof PersistentCollection) ) ?",6891,0
+code/core/src/main/java/org/hibernate/event/def/EvictVisitor.java,1,TODO: is this 100% correct?,6891,0
+code/core/src/main/java/org/hibernate/event/def/OnLockVisitor.java,1,"brand new collection
+TODO: or an array!! we can't lock objects with arrays now??",6891,0
+code/core/src/main/java/org/hibernate/event/def/OnUpdateVisitor.java,1,"if the collection belonged to a different entity,
+clean up the existing state of the collection",6891,0
+code/core/src/main/java/org/hibernate/event/def/WrapVisitor.java,1,"TODO: move into collection type, so we can use polymorphism!",6891,0
+code/core/src/main/java/org/hibernate/exception/Configurable.java,1,todo: this might really even be moved into the cfg package and used as the basis for all things which are configurable.,6891,0
+code/core/src/main/java/org/hibernate/hql/ast/exec/AbstractStatementExecutor.java,1,"Don't really know all the codes required to adequately decipher returned jdbc exceptions here.
+simply allow the failure to be eaten and the subsequent insert-selects/deletes should fail",6891,0
+code/core/src/main/java/org/hibernate/hql/ast/HqlParser.java,1,"TODO: switch statements are always evil! We already had bugs because
+of forgotten token types. Use polymorphism for this!",6891,0
+code/core/src/main/java/org/hibernate/hql/ast/HqlSqlWalker.java,4,"todo : temporary
+needed because currently persister is the one that
+creates and renders the join fragments for inheritence
+hierarchies... | TODO : better way?!? | projection lists for every persister in the from clause into
+a single 'token node'.
+TODO: the only reason we need this stuff now is collection filters,
+we should get rid of derived select clause compl | TODO: is it kosher to do it here?",6891,1
+code/core/src/main/java/org/hibernate/hql/ast/QueryTranslatorImpl.java,5,"TODO:this is only needed during compilation .. can we eliminate the instvar? | at some point the generate phase needs to be moved out of here,
+because a single object-level DML might spawn multiple SQL DML
+command executions.
+
+Possible to just move the sql generation for dml stu | it need it?  Ideally like to see the walker itself given to the delegates directly... | TODO : this is a bit dodgy, come up with a better way to check this (plus see above comment) | even here, if only properties mapped to the \""base table\"" are referenced
+in the set and where clauses, this could be handled by the BasicDelegate.
+TODO : decide if it is better performance-wise to pe",6891,1
+code/core/src/main/java/org/hibernate/hql/ast/SqlGenerator.java,3,"if template is null we just write the function out as it appears in the hql statement | this function has a template -> restore output, apply the template and write the result out
+TODO: Downcast to avoid using an interface?  Yuck. | /////////////////////////////////////////////////////////////////////
+HACK ALERT !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Attempt to work around \""ghost\"" ImpliedFromElements that occasionally
+show up between the",6891,0
+code/core/src/main/java/org/hibernate/hql/ast/tree/AssignmentSpecification.java,2,yuck! | TODO : why aren't these the same?,6891,0
+code/core/src/main/java/org/hibernate/hql/ast/tree/BinaryArithmeticOperatorNode.java,2,"more specifically : \""datetime [op] ?\""
+1) if the operator is MINUS, we really cannot determine
+the expected type as either another datetime or
+numeric would be valid
+2) if the operator is PLUS, the p | TODO : we may also want to check that the types here map to exactly one column/JDBC-type
+can't think of a situation where arithmetic expression between multi-column mappings
+makes any sense.",6891,0
+code/core/src/main/java/org/hibernate/hql/ast/tree/BinaryLogicOperatorNode.java,1,"TODO : this really needs to be delayed unitl after we definitively know all node types
+where this is currently a problem is parameters for which where we cannot unequivocally
+resolve an expected type",6891,1
+code/core/src/main/java/org/hibernate/hql/ast/tree/DotNode.java,3,"yuck! | should indicate that we are processing an INSERT/UPDATE/DELETE
+query with a subquery implied via a collection property
+function. Here, we need to use the table name itself as the
+qualification alias.
+ | /////////////////////////////////////////////////////////////////////////////
+
+This is the piece which recognizes the condition where an implicit join path
+resolved earlier in a correlated subquery is",6891,0
+code/core/src/main/java/org/hibernate/hql/ast/tree/FromClause.java,3,"TODO: not sure about this one | TODO: implement functionality
+this might be painful to do here, as the \""join post processing\"" for
+the subquery has already been performed (meaning that for
+theta-join dialects, the join conditions h | TODO : this is broke for subqueries in statements other than selects...",6891,2
+code/core/src/main/java/org/hibernate/hql/ast/tree/FromElement.java,2,"TODO: Figure out a better way to get the FROM elements in a proper tree structure.
+If this is not the destination of a many-to-many, add it as a child of the origin. | cannot be sure what to do here.  At the very least, the
+safest is to simply not apply any dereference toggling...",6891,0
+code/core/src/main/java/org/hibernate/hql/ast/tree/FromElementFactory.java,1,"TODO: always true for now, but not if we later decide to support elements() in the from clause",6891,0
+code/core/src/main/java/org/hibernate/hql/ast/tree/FromElementType.java,2,"TODO: Replace this with a more elegant solution. | TODO: Should this really return null?  If not, figure out something better to do here.",6891,0
+code/core/src/main/java/org/hibernate/hql/ast/tree/IdentNode.java,2,"An ident node can represent an index expression if the ident
+represents a naked property ref
+Note: this makes the assumption (which is currently the case
+in the hql-sql grammar) that the ident is firs | TODO : should this be an error?",6891,0
+code/core/src/main/java/org/hibernate/hql/ast/tree/IndexNode.java,2,"TODO: get SQL rendering out of here, create an AST for the join expressions.
+Use the SQL generator grammar to generate the SQL text for the index expression. | TODO: used to be exprNoParens! was this needed?",6891,0
+code/core/src/main/java/org/hibernate/hql/ast/tree/IntoClause.java,1,"this is difficult because the hql-sql grammar expects all those node types
+to be FromReferenceNodes.  One potential fix here would be to convert the
+IntoClause to just use a FromClause/FromElement com",6891,0
+code/core/src/main/java/org/hibernate/hql/ast/tree/MethodNode.java,1,TODO:,6891,0
+code/core/src/main/java/org/hibernate/hql/ast/tree/SelectClause.java,5,"work around that crazy issue where the tree contains | todo: we should really just collect these from the various SelectExpressions, rather than regenerating here | // NOTE : the isSubQuery() bit is a temporary hack... | TODO: is this a bit ugly? | Need a better way to define the suffixes here...",6891,0
+code/core/src/main/java/org/hibernate/hql/ast/util/JoinProcessor.java,1,TODO : or should we return 'containsTableAlias'??,6891,0
+code/core/src/main/java/org/hibernate/hql/ast/util/LiteralProcessor.java,2,"TODO: something much better - look at the type of the other expression!
+TODO: Have comparisonExpression and/or arithmeticExpression rules complete the resolution of boolean nodes. | TODO : what amount of significant digits need to be supported here?
+- from the DecimalFormat docs:
+[significant digits] = [minimum integer digits] + [maximum fraction digits]",6891,0
+code/core/src/main/java/org/hibernate/hql/ast/util/SessionFactoryHelper.java,2,"Needed the \""clazz_\"" check to work around union-subclasses
+TODO : is there a way to tell whether a persister is truly discrim-column based inheritence? | TODO: figure out how this should be set.
+/////////////////////////////////////////////////////////////////////////////
+This was the reason for failures regarding INDEX_OP and subclass joins on",6891,0
+code/core/src/main/java/org/hibernate/hql/ast/util/SyntheticAndFactory.java,1,"however it is probably not the best long-term solution.
+
+At some point we probably want to apply an additional grammar to
+properly tokenize this where fragment into constituent parts
+focused on the op",6891,0
+code/core/src/main/java/org/hibernate/hql/classic/GroupByParser.java,1,"TODO: would be nice to use false, but issues with MS SQL",6891,0
+code/core/src/main/java/org/hibernate/hql/classic/OrderByParser.java,1,"TODO: would be nice to use false, but issues with MS SQL",6891,0
+code/core/src/main/java/org/hibernate/hql/classic/PathExpressionParser.java,3,"TODO: this class does too many things! we need a different
+kind of path expression parser for each of the diffferent
+ways in which path expressions can occur | TODO: get SQL rendering out of here | TODO: is there a better way?",6891,0
+code/core/src/main/java/org/hibernate/hql/classic/QueryTranslatorImpl.java,3,TODO: cannot use generateSuffixes() - it handles the initial suffix differently. | Must be done here because of side-effect! yuck... | TODO: for some dialects it would be appropriate to add the renderOrderByPropertiesSelect() to other select strings,6891,0
+code/core/src/main/java/org/hibernate/hql/classic/SelectParser.java,2,"TODO: arithmetic expressions, multiple new Foo(...) | TODO: would be nice to use false, but issues with MS SQL",6891,0
+code/core/src/main/java/org/hibernate/hql/classic/WhereParser.java,3,"We would probably refactor to have LogicParser (builds a tree of simple
+expressions connected by and, or, not), ExpressionParser (translates
+from OO terms like foo, foo.Bar, foo.Bar.Baz to SQL terms l | ugly hack for cases like \""elements(foo.bar.collection)\""
+(multi-part path expression ending in elements or indices) | this is ugly here, but needed because its a subquery",6891,0
+code/core/src/main/java/org/hibernate/hql/CollectionSubqueryFactory.java,1,TODO: refactor to .sql package,6891,0
+code/core/src/main/java/org/hibernate/hql/QuerySplitter.java,1,TODO: this is one of the ugliest and most fragile pieces of code in Hibernate....,6891,0
+code/core/src/main/java/org/hibernate/id/Assigned.java,1,"TODO: cache the persister, this shows up in yourkit",6891,0
+code/core/src/main/java/org/hibernate/impl/AbstractQueryImpl.java,1,TODO: maybe call it getRowSelection() ?,6891,0
+code/core/src/main/java/org/hibernate/impl/FetchingScrollableResultsImpl.java,1,"TODO : not sure the best way to handle this.
+The non-performant way :",6891,0
+code/core/src/main/java/org/hibernate/impl/FilterImpl.java,1,"Make sure this is a defined parameter and check the incoming value type
+TODO: what should be the actual exception type here?",6891,0
+code/core/src/main/java/org/hibernate/impl/SessionFactoryImpl.java,1,TODO: BUG! this currently fails for named queries for non-POJO entities,6891,0
+code/core/src/main/java/org/hibernate/impl/SessionFactoryObjectFactory.java,1,TODO: theoretically non-threadsafe...,6891,0
+code/core/src/main/java/org/hibernate/impl/SessionImpl.java,7,"todo : need to find a clean way to handle the \""event source\"" role
+a seperate classs responsible for generating/dispatching events just duplicates most of the Session methods...
+passing around sepera | todo : should this get moved to PersistentContext?
+logically, is PersistentContext the \""thing\"" to which an interceptor gets attached? | todo : remove | First, validate all the enabled filters...
+TODO: this implementation has bad performance | todo : should seriously consider not allowing a txn to begin from a child session
+can always route the request to the root session... | try block is a hack around fact that currently tuplizers are not
+given the opportunity to resolve a subclass entity name.  this
+allows the (we assume custom) interceptor the ability to
+influence this  | todo : look at optimizing these...",6891,1
+code/core/src/main/java/org/hibernate/impl/StatelessSessionImpl.java,2,"TODO : can this ever happen??? | TODO: COPY/PASTE FROM SessionImpl, pull up!",6891,0
+code/core/src/main/java/org/hibernate/loader/collection/BasicCollectionJoinWalker.java,1,"use its alias here
+TODO : is there a better way here?",6891,0
+code/core/src/main/java/org/hibernate/loader/criteria/CriteriaJoinWalker.java,1,"TODO: add a CriteriaImplementor interface
+this class depends directly upon CriteriaImpl in the impl package...",6891,0
+code/core/src/main/java/org/hibernate/loader/criteria/CriteriaLoader.java,1,"TODO: this class depends directly upon CriteriaImpl,
+in the impl package ... add a CriteriaImplementor
+interface",6891,0
+code/core/src/main/java/org/hibernate/loader/criteria/CriteriaQueryTranslator.java,3,"TODO : not so sure this is needed... | should never happen, i think | TODO: use these in methods above",6891,0
+code/core/src/main/java/org/hibernate/loader/custom/sql/SQLCustomQuery.java,1,//TODO: Does not consider any other tables referenced in the query,6891,0
+code/core/src/main/java/org/hibernate/loader/custom/sql/SQLQueryParser.java,2,"TODO: should \""record\"" how many properties we have reffered to - and if we | TODO: better error message since we actually support composites if names are explicitly listed.",6891,0
+code/core/src/main/java/org/hibernate/loader/hql/QueryLoader.java,2,"TODO should we just collect these like with the collections above? | todo : better to handle dynamic filters through implicit DynamicFilterParameterSpecification
+see the discussion there in DynamicFilterParameterSpecification's javadocs as to why
+it is currently not do",6891,0
+code/core/src/main/java/org/hibernate/loader/JoinWalker.java,5,"TODO: when this is the entry point, we should use an INNER_JOIN for fetching the many-to-many elements! | TODO: look at the owning property and check that it
+isn't lazy (by instrumentation) | TODO: inefficient | why does this matter? | TODO: unnecessary for databases with ANSI-style joins",6891,0
+code/core/src/main/java/org/hibernate/loader/Loader.java,13,"thus if we are after the last physical row, this might be
+caused by either:
+1) scrolling to the last logical row
+2) scrolling past the last logical row
+In the latter scenario, the previous logical row | TODO: make this handle multiple collection roles! | TODO: old version did not require hashmap lookup:
+keys[collectionOwner].getIdentifier() | would be great to move all this below here into another method that could also be used
+from the new scrolling stuff.
+
+Would need to change the way the max-row stuff is handled (i.e. behind an interfac | if we only returned one entity, query by key is more efficient | for arrays, we should end the collection load before resolving
+the entities, since the actual array instances are not instantiated
+during loading
+TODO: or we could do this polymorphically, and have tw | for sets, we should end the collection load after resolving
+the entities, since we might call hashCode() on the elements
+TODO: or we could do this polymorphically, and have two
+different operations im | TODO: can we *always* use the \""null property\"" approach for everything? | TODO: This is assertion is disabled because there is a bug that means the
+original owner of a transient, uninitialized collection is not known
+if the collection is re-referenced by a different object  | This is not very nice (and quite slow): | use of trim() here is ugly? | TODO: can we limit stored procedures ?! | potential deadlock issues due to nature of code.",6891,0
+code/core/src/main/java/org/hibernate/mapping/Column.java,1,"TODO: deprecated, remove eventually",6891,0
+code/core/src/main/java/org/hibernate/mapping/Component.java,2,TODO : temporary initial step towards HHH-1907 | todo : remove this once ComponentMetamodel is complete and merged,6891,0
+code/core/src/main/java/org/hibernate/mapping/DenormalizedTable.java,1,"wierd implementation because of hacky behavior
+of Table.sqlCreateString() which modifies the
+list of unique keys by side-effect on some
+dialects",6891,0
+code/core/src/main/java/org/hibernate/mapping/Index.java,1,"TODO handle supportsNotNullUnique=false, but such a case does not exist in the wild so far",6891,0
+code/core/src/main/java/org/hibernate/mapping/OneToMany.java,2,TODO: we could just return all false...,6891,0
+code/core/src/main/java/org/hibernate/mapping/OneToOne.java,1,TODO: handle the case of a foreign key to something other than the pk,6891,0
+code/core/src/main/java/org/hibernate/mapping/PersistentClass.java,1,TODO: remove use of instanceof!,6891,0
+code/core/src/main/java/org/hibernate/mapping/Property.java,3,todo : remove,6891,0
+code/core/src/main/java/org/hibernate/mapping/SimpleValue.java,1,"init the table here instead of earlier, so that we can get a quoted table name
+TODO: would it be better to simply pass the qualified table name, instead of
+splitting it up into schema/catalog/table na",6891,0
+code/core/src/main/java/org/hibernate/mapping/Table.java,1,"TODO: add referencedClass to disambiguate to FKs on the same
+columns, pointing to different tables",6891,0
+code/core/src/main/java/org/hibernate/mapping/UniqueKey.java,1,TODO: improve this hack!,6891,0
+code/core/src/main/java/org/hibernate/param/CollectionFilterKeyParameterSpecification.java,1,todo : throw exception?,6891,0
+code/core/src/main/java/org/hibernate/param/DynamicFilterParameterSpecification.java,1,todo : throw exception?,6891,1
+code/core/src/main/java/org/hibernate/persister/collection/AbstractCollectionPersister.java,7,"TODO: encapsulate the protected instance variables! | workaround, for backward compatibility of sets with no
+not-null columns, assume all columns are used in the
+row locator SQL | if there is a user-specified loader, return that
+TODO: filters!? | TODO: something with formulas... | TODO: copy/paste from insertRows() | TODO: copy/paste from recreate() | TODO: formulas ?",6891,0
+code/core/src/main/java/org/hibernate/persister/collection/BasicCollectionPersister.java,1,"we need to determine the best way to know that two joinables
+represent a single many-to-many...",6891,0
+code/core/src/main/java/org/hibernate/persister/collection/CollectionPersister.java,1,TODO: add owner argument!!,6891,0
+code/core/src/main/java/org/hibernate/persister/collection/NamedQueryCollectionInitializer.java,1,TODO: is there a more elegant way than downcasting?,6891,0
+code/core/src/main/java/org/hibernate/persister/entity/AbstractEntityPersister.java,27,"Custom SQL (would be better if these were private) | TODO: is this completely correct? | NOTE: this assumes something about how propertySelectFragment is implemented by the subclass!
+was toUnqotedAliasStrings( getIdentiferColumnNames() ) before - now tried
+to remove that unqoting and miss | NOTE: this assumes something about how propertySelectFragment is implemented by the subclass! | NOTE: this assumes something about how propertySelectFragment is implemented by the subclass!
+was toUnqotedAliasStrings( getdiscriminatorColumnName() ) before - now tried
+to remove that unqoting and m | TODO : currently we really do not handle ValueInclusion.PARTIAL...
+ValueInclusion.PARTIAL would indicate parts of a component need to | TODO: should we use SELECT .. FOR UPDATE? | todo : cache this sql... | TODO: optimize this better! | TODO: should we allow suffixes on these ? | This is really ugly, but necessary: | TODO: skip formulas? | ugly little workaround for fact that createUniqueKeyLoaders() does not handle component properties | TODO: create uk loaders for component properties | TODO: disable batch loading if lockMode > READ? | TODO: eventually, rowIdName[j] | append the SQL to return the generated identifier
+TODO: suck into Insert | TODO:  this is kinda slow... | TODO: I am not so sure about the exception handling in this bit! | iterating the result set to determine whether all non-optional
+data is present
+My initial thoughts on the best way to deal with this would be
+to introduce a new SequentialSelect abstraction that actua | TODO: cache this in an instvar | assume that the row was not there since it previously had only null
+values, so do an INSERT instead
+TODO: does not respect dynamic-insert | TODO: is this really necessary???? | first we need to locate the \""loaded\"" state
+
+Note, it potentially could be a proxy, so perform the location the safe way... | TODO: move to .sql package, and refactor with similar things! | TODO: inexact, what we really need to know is: are any outer joins used? | /////////////////////////////////////////////////////////////////////
+TODO : look at perhaps caching this...",6891,1
+code/core/src/main/java/org/hibernate/persister/entity/AbstractPropertyMapping.java,3,"TODO: *two* hashmap lookups here is one too many... | TODO: this requires that the collection is defined after the
+referenced property in the mapping file (ok?) | TODO : would be great to have a Mapping#hasNonIdentifierPropertyNamedId method",6891,0
+code/core/src/main/java/org/hibernate/persister/entity/Joinable.java,1,should this interface extend PropertyMapping?,6891,0
+code/core/src/main/java/org/hibernate/persister/entity/JoinedSubclassEntityPersister.java,1,TODO: code duplication with SingleTableEntityPersister,6891,0
+code/core/src/main/java/org/hibernate/persister/entity/NamedQueryLoader.java,1,"now look up the object we are really interested in!
+(this lets us correctly handle proxies and multi-row
+or multi-column queries)",6891,0
+code/core/src/main/java/org/hibernate/persister/entity/PropertyMapping.java,1,"TODO: It would be really, really nice to use this to also model components!",6891,0
+code/core/src/main/java/org/hibernate/persister/entity/SingleTableEntityPersister.java,2,TODO: code duplication with JoinedSubclassEntityPersister | perhaps not really necessary...,6891,0
+code/core/src/main/java/org/hibernate/persister/entity/UnionSubclassEntityPersister.java,5,"SPACES
+TODO: i'm not sure, but perhaps we should exclude
+abstract denormalized tables? | TODO: include the rowids!!!! | ie. the subquery! yuck! | TODO: move to .sql package!! | TODO: check this....",6891,0
+code/core/src/main/java/org/hibernate/property/Dom4jAccessor.java,1,"kinda ugly, but needed for collections with a \"".\"" node mapping",6891,0
+code/core/src/main/java/org/hibernate/property/PropertyAccessorFactory.java,6,"TODO: ideally we need the construction of PropertyAccessor to take the following:
+1) EntityMode
+2) EntityMode-specific data (i.e., the classname for pojo entities)
+3) Property-specific data based on t | TODO: this is temporary in that the end result will probably not take a Property reference per-se. | TODO: passing null here, because this method is not really used for DOM4J at the moment
+but it is still a bug, if we don't get rid of this! | TODO: need some caching scheme? really comes down to decision
+regarding amount of state (if any) kept on PropertyAccessors | todo : this eventually needs to be removed",6891,0
+code/core/src/main/java/org/hibernate/proxy/AbstractLazyInitializer.java,1,TODO: perhaps this should be some other RuntimeException...,6891,0
+code/core/src/main/java/org/hibernate/secure/HibernatePermission.java,1,TODO!,6891,0
+code/core/src/main/java/org/hibernate/sql/Select.java,1,"the outerJoinsAfterWhere needs to come before where clause to properly
+handle dynamic filters",6891,0
+code/core/src/main/java/org/hibernate/sql/SelectFragment.java,1,"TODO: eventually put this back in, once we think all is fixed",6891,0
+code/core/src/main/java/org/hibernate/sql/Template.java,2,TODO: make this a bit nicer | Yuck:,6891,0
+code/core/src/main/java/org/hibernate/stat/StatisticsImpl.java,1,TODO: we should provide some way to get keys of collection of statistics to make it easier to retrieve from a GUI perspective,6891,0
+code/core/src/main/java/org/hibernate/tuple/component/ComponentMetamodel.java,2,TODO : will need reference to session factory to fully complete HHH-1907 | cached for efficiency...,6891,0
+code/core/src/main/java/org/hibernate/tuple/component/Dom4jComponentTuplizer.java,1,"TODO: currently we don't know a SessionFactory reference when building the Tuplizer
+THIS IS A BUG (embedded-xml=false on component)
+TODO : fix this after HHH-1907 is complete",6891,0
+code/core/src/main/java/org/hibernate/tuple/component/PojoComponentTuplizer.java,1,"TODO: here is why we need to make bytecode provider global :(
+TODO : again, fix this after HHH-1907 is complete",6891,0
+code/core/src/main/java/org/hibernate/tuple/entity/AbstractEntityTuplizer.java,1,TODO: redesign how PropertyAccessors are acquired...,6891,0
+code/core/src/main/java/org/hibernate/tuple/entity/DynamicMapEntityTuplizer.java,1,TODO: design new lifecycle for ProxyFactory,6891,0
+code/core/src/main/java/org/hibernate/tuple/entity/EntityMetamodel.java,1,TODO: this disables laziness even in non-pojo entity modes:,6891,0
+code/core/src/main/java/org/hibernate/tuple/entity/PojoEntityTuplizer.java,4,"todo : YUCK!!! | TODO : YUCK!!!  finx after HHH-1907 is complete | TODO: need to make the majority of this functionality into a top-level support class for custom impl support | TODO: if we support multiple fetch groups, we would need
+to clone the set of lazy properties!",6891,1
+code/core/src/main/java/org/hibernate/type/AbstractBynaryType.java,1,is this really necessary?,6891,0
+code/core/src/main/java/org/hibernate/type/AbstractType.java,2,"TODO: this is very suboptimal for some subclasses (namely components),
+since it does not take advantage of two-phase-load | not really necessary, I guess...",6891,0
+code/core/src/main/java/org/hibernate/type/AnyType.java,4,"TODO: entities CAN be compared, by PK and entity name, fix this! | TODO: terrible implementation! | TODO: is this right?? | TODO!!!",6891,0
+code/core/src/main/java/org/hibernate/type/ArrayType.java,1,TODO: proxies!,6891,0
+code/core/src/main/java/org/hibernate/type/AssociationType.java,1,"TODO: move these to a new JoinableType abstract class,
+extended by EntityType and PersistentCollectionType:",6891,0
+code/core/src/main/java/org/hibernate/type/CollectionType.java,8,"worrying about proxies is perhaps a little bit of overkill here... | for DOM4J \""collections\"" only
+TODO: it would be better if this was done at the higher level by Printer | This solution would allow us to eliminate the owner arg to disassemble(), but
+what if the collection was null, and then later had elements added? seems unsafe | This just handles a particular case of component
+projection, perhaps get rid of it and throw an exception | NOTE VERY HACKISH WORKAROUND!! | TODO: can this case really occur?? | TODO: does not work for EntityMode.DOM4J yet! | if the original is a PersistentCollection, and that original
+was not flagged as dirty, then reset the target's dirty flag
+here after the copy operation.
+</p>
+One thing to be careful of here is a \""bar",6891,1
+code/core/src/main/java/org/hibernate/type/ComponentType.java,3,"TODO | note that this implementation is kinda broken
+for components with many-to-one associations | TODO!!!!!!!",6891,0
+code/core/src/main/java/org/hibernate/type/CompositeCustomType.java,1,TODO!!!!!!!,6891,0
+code/core/src/main/java/org/hibernate/type/EmbeddedComponentType.java,1,"TODO: Yuck! This is not quite good enough, it's a quick
+hack around the problem of having a to-one association
+that refers to an embedded component:",6891,0
+code/core/src/main/java/org/hibernate/type/EntityType.java,3,"TODO: entities CAN be compared, by PK, fix this! -> only if/when we can extract the id values.... | TODO: this is a bit arbitrary, expose a switch to the user? | TODO: implement caching?! proxies?!",6891,0
+code/core/src/main/java/org/hibernate/type/ListType.java,1,TODO: proxies!,6891,0
+code/core/src/main/java/org/hibernate/type/ManyToOneType.java,1,"TODO: currently broken for unique-key references (does not detect
+change to unique key property of the associated object)",6891,0
+code/core/src/main/java/org/hibernate/type/MapType.java,1,TODO: proxies!,6891,0
+code/core/src/main/java/org/hibernate/type/MetaType.java,1,TODO!,6891,0
+code/core/src/main/java/org/hibernate/type/OneToOneType.java,1,TODO: this is kinda inconsistent with CollectionType,6891,0
+code/core/src/main/java/org/hibernate/type/SpecialOneToOneType.java,2,"TODO: copy/paste from ManyToOneType | TODO: currently broken for unique-key references (does not detect
+change to unique key property of the associated object)
+the owner of the association is not the owner of the id",6891,0
+code/core/src/main/java/org/hibernate/type/WrapperBinaryType.java,1,TODO find a decent name before documenting,6891,0
+code/core/src/main/java/org/hibernate/util/Cloneable.java,2,"release the jdk internal caches everytime to ensure this
+plays nicely with destroyable class-loaders",6891,0
+code/core/src/main/java/org/hibernate/util/ExternalSessionFactoryConfig.java,1,Its the listener instance (or better be),6891,0
+code/core/src/main/java/org/hibernate/util/ReflectHelper.java,1,TODO: this dependency is kinda Bad,6891,0
+code/core/src/main/java/org/hibernate/util/StringHelper.java,2,"Impl note: takes advantage of the fact that an escpaed single quote
+embedded within a quote-block can really be handled as two seperate
+quote-blocks for the purposes of this method...",6891,0
+code/jmx/src/main/java/org/hibernate/jmx/StatisticsService.java,1,"TODO: We probably should have a StatisticsNotPublishedException, to make it clean",6891,0
+code/testing/src/main/java/org/hibernate/junit/functional/FunctionalTestClassTestSuite.java,2,"todo : we could also centralize the skipping of \""database specific\"" tests here
+instead of duplicating this notion in AllTests and DatabaseSpecificFunctionalTestCase.
+as a test gets added, simply che | disallow rebuilding the schema because this is the last test
+in this suite, thus it is about to get dropped immediately
+afterwards anyway...",6891,0
+code/testsuite/src/test/java/org/hibernate/test/cache/BaseCacheProviderTestCase.java,1,FIXME don't know what to test here,6891,0
+code/testsuite/src/test/java/org/hibernate/test/connections/Silly.java,1,$Id: Silly.java 9595 2006-03-10 18:14:21Z steve.ebersole@jboss.com $,6891,0
+code/testsuite/src/test/java/org/hibernate/test/criteria/CriteriaQueryTest.java,1,".setFetchMode(\""enrolments.course\"", FetchMode.JOIN) //TODO: would love to make that work...",6891,0
+code/testsuite/src/test/java/org/hibernate/test/cut/MonetoryAmountUserType.java,1,TODO: improve,6891,0
+code/testsuite/src/test/java/org/hibernate/test/dialect/functional/cache/SQLFunctionsInterSystemsTest.java,1,trivial hack to test properties with arrays.,6891,0
+code/testsuite/src/test/java/org/hibernate/test/discriminator/DiscriminatorTest.java,1,TODO: make this work:,6891,0
+code/testsuite/src/test/java/org/hibernate/test/entitymode/dom4j/basic/Dom4jTest.java,1,"TODO : still need to figure out inheritence support within the DOM4J entity-mode
+",6891,0
+code/testsuite/src/test/java/org/hibernate/test/FailureExpectedCollector.java,1,todo : need to come up with a new scheme to do this...,6891,0
+code/testsuite/src/test/java/org/hibernate/test/generated/TriggerGeneratedValuesWithCachingTest.java,1,"currently have only defined triggers for oracle...
+TODO : add more triggers for dialects which allow mods in triggers...",6891,0
+code/testsuite/src/test/java/org/hibernate/test/generated/TriggerGeneratedValuesWithoutCachingTest.java,1,"currently have only defined triggers for oracle...
+TODO : add more triggers for dialects which allow mods in triggers...",6891,0
+code/testsuite/src/test/java/org/hibernate/test/generatedkeys/select/SelectGeneratorTest.java,1,TODO : need to determine appropriate physical generation strategies for select-generator testing on other databases...,6891,0
+code/testsuite/src/test/java/org/hibernate/test/hql/ASTParserLoadingTest.java,3,"(1) From MapTest originally...
+(2) Was then moved into HQLTest...
+(3) However, a bug fix to EntityType#getIdentifierOrUniqueKeyType (HHH-2138)
+caused the classic parser to suddenly start throwing exce | TODO : setEntity() currently will not work here, but that would be *very* nice
+does not work because the corresponding EntityType is then used as the \""bind type\"" rather
+than the \""discovered\"" AnyTy | todo the following is not supported",6891,0
+code/testsuite/src/test/java/org/hibernate/test/hql/BulkManipulationTest.java,2,"TODO : not so sure this should be allowed.  Seems to me that if they specify an alias,
+property-refs should be required to be qualified. | workaround awesome HSQLDB \""feature\""",6891,0
+code/testsuite/src/test/java/org/hibernate/test/hql/EJBQLTest.java,1,todo the following is not supported,6891,0
+code/testsuite/src/test/java/org/hibernate/test/hql/HqlParserTest.java,2,"Super evil badness... a legitimate keyword! | Okay, now this is getting silly.",6891,0
+code/testsuite/src/test/java/org/hibernate/test/hql/HQLTest.java,23,"TODO: broken SQL
+steve (2005.10.06) - this is perfect SQL, but fairly different from the old parser
+tested : HSQLDB (1.8), Oracle8i | TODO: broken SQL | TODO: new parser generates unnecessary joins (though the query results are correct) | TODO: broken on dialects with theta-style outerjoins:
+steve (2005.10.06) - this works perfectly for me on Oracle8i | TODO: this breaks on dialects with theta-style outerjoins:
+steve (2005.10.06) - this works perfectly for me on Oracle8i | Instead of doing the pre-processor trick like the existing QueryTranslator, this
+is handled by MethodNode.
+steve (2005.10.06) - this works perfectly for me on Oracle8i
+TODO: broken on dialects with th | TODO: broken on dialects with theta-style joins
+/old parser had a bug where the collection element was not included in return types!
+steve (2005.10.06) - this works perfectly for me on Oracle8i | old parser had a bug where the collection element was not returned!
+TODO: broken on dialects with theta-style joins
+steve (2005.10.06) - this works perfectly for me on Oracle8i | test for HHH-557,
+TODO : this passes regardless because the only difference between the two sqls is one extra comma
+(commas are eaten by the tokenizer during asserTranslation when building the token m | only regress against non-scalar forms as there appears to be a bug in the classic translator
+in regards to this issue also.  Specifically, it interprets the wrong return type, though it gets
+the sql \ | these are both broken, a join that belongs in the subselect finds its way into the main query | 2004-06-27 [jsd] Recognize 'is null' properly.  Generate 'and' and 'or' as well. | would be nice to have: | TODO: the join in the subselect also shows up in the outer query! | todo : additional desired functionality | the old parser could handle these correctly
+ | This test causes failures on theta-join dialects because the SQL is different.  The old parser
+duplicates the condition, whereas the new parser does not.  The queries are semantically the
+same however | TODO: The classic QT generates lots of extra parens, etc. | NOTE: This test is not likely to generate the exact SQL because of the where clause.  The synthetic
+theta style joins come out differently in the new QT.
+From FooBarTest.testQuery()
+Missing the foo2_  | From MultiTableTest.testQueries()
+TODO: This produces the proper from clause now, but the parens in the where clause are different. | TODO: The old QT generates the discriminator and the theta join in a strange order, and with two extra sets of parens, this is okay, right? | The old translator generates the theta join before the condition in the sub query.
+TODO: Decide if we want to bother generating the theta join in the same order (non simple).",6891,0
+code/testsuite/src/test/java/org/hibernate/test/hql/QueryTranslatorTestCase.java,2,"Create an instance of HqlToken, so that it will have an entry point outside the package.  This
+will stop IDEA's code inspector from suggesting that HqlToken should be package local. | for \""better reporting\"" purposes, make sure both result sets are fully exhausted",6891,0
+code/testsuite/src/test/java/org/hibernate/test/idgen/enhanced/OptimizerUnitTest.java,1,once to initialze state,6891,0
+code/testsuite/src/test/java/org/hibernate/test/joinedsubclass/JoinedSubclassTest.java,1,TODO: make this work:,6891,0
+code/testsuite/src/test/java/org/hibernate/test/legacy/ComponentNotNull.java,1,"I've flatten several components in one class, this is kind of ugly but
+I don't have to write tons of classes",6891,0
+code/testsuite/src/test/java/org/hibernate/test/legacy/FooBarTest.java,3,&& !(dialect instanceof MckoiDialect) | yuck!!,6891,0
+code/testsuite/src/test/java/org/hibernate/test/legacy/SQLFunctionsTest.java,1,trivial hack to test properties with arrays.,6891,0
+code/testsuite/src/test/java/org/hibernate/test/legacy/SQLLoaderTest.java,1,TODO: compositeid's - how ? (SingleSeveral.hbm.xml test),6891,0
+code/testsuite/src/test/java/org/hibernate/test/mappingexception/MappingExceptionTest.java,1,"TODO: String.class result in npe, because no classloader exists for it",6891,0
+code/testsuite/src/test/java/org/hibernate/test/proxy/ProxyTest.java,1,problem on HSQLDB (go figure),6891,0
+code/testsuite/src/test/java/org/hibernate/test/sql/hand/MonetaryAmount.java,2,TODO: This would actually require some currency conversion magic | TODO: This requires some conversion magic and is therefore broken,6891,0
+code/testsuite/src/test/java/org/hibernate/test/sql/hand/query/NativeSQLQueriesTest.java,1,TODO : why twice?,6891,0
+code/testsuite/src/test/java/org/hibernate/test/tm/CMTTest.java,1,"TODO : would be nice to automate-test that the SF internal map actually gets cleaned up
+i verified that is does currently in my debugger...",6891,0
+code/testsuite/src/test/java/org/hibernate/test/unionsubclass2/UnionSubclassTest.java,1,TODO : why??,6891,0
+core/src/main/java/org/hibernate/action/EntityIdentityInsertAction.java,1,TODO: simply remove this override if we fix the above todos,6032,0
+core/src/main/java/org/hibernate/cfg/AnnotationBinder.java,1,"same dec
+the actual @XToOne property
+TODO we should get the right accessor but the same as id would do",5698,0
+core/src/main/java/org/hibernate/cfg/Configuration.java,1,"Do not cache this value as we lazily set it in Hibernate Annotation (AnnotationConfiguration)
+TODO use a dedicated protected useQuotedIdentifier flag in Configuration (overriden by AnnotationConfigura",5998,0
+core/src/main/java/org/hibernate/cfg/CopyIdentifierComponentSecondPass.java,1,TODO better error names,5751,0
+core/src/main/java/org/hibernate/cfg/HbmBinder.java,2,"YUCK!  but cannot think of a clean way to do this given the string-config based scheme | todo : another GoodThing would be to go back after all parsing and see if all the columns
+(and no formulas) are contained in a defined unique key that only contains these columns.
+That too would mark ",6000,0
+core/src/main/java/org/hibernate/dialect/AbstractTransactSQLDialect.java,1,TODO:  merge additional lockoptions support in Dialect.applyLocksToSql,5933,0
+core/src/main/java/org/hibernate/dialect/DerbyDialect.java,1,"technically sequence support was added in 10.6.1.0...
+
+The problem though is that I am not exactly sure how to differentiate 10.6.1.0 from any other 10.6.x release.
+
+http://db.apache.org/derby/docs/10",5737,0
+core/src/main/java/org/hibernate/dialect/Dialect.java,1,"oddly most database in fact seem to, so true is the default.",5847,0
+core/src/main/java/org/hibernate/dialect/function/CastFunction.java,1,"this is really just a guess, unless the caller properly identifies the 'type' argument here",5761,0
+core/src/main/java/org/hibernate/dialect/function/DerbyConcatFunction.java,1,todo : make this available via StringHelper?,6454,0
+core/src/main/java/org/hibernate/dialect/lock/PessimisticReadUpdateLockingStrategy.java,1,todo:  should this instead check for exactly one row modified?,6024,0
+core/src/main/java/org/hibernate/dialect/lock/PessimisticWriteUpdateLockingStrategy.java,1,todo:  should this instead check for exactly one row modified?,6024,0
+core/src/main/java/org/hibernate/dialect/Oracle8iDialect.java,1,todo : is there really any reason to kkeep trying if this fails once?,6206,0
+core/src/main/java/org/hibernate/engine/ActionQueue.java,1,optimize the hash size to eliminate a rehash.,6672,0
+core/src/main/java/org/hibernate/engine/Cascade.java,1,"association defined on component
+todo : this is currently unsupported because of the fact that
+we do not know the loaded state of this value properly
+and doing so would be very difficult given how com",5959,0
+core/src/main/java/org/hibernate/engine/EntityEntry.java,2,"TODO:  use LockMode.PESSIMISTIC_FORCE_INCREMENT | noinspection deprecation
+TODO:  use LockMode.PESSIMISTIC_FORCE_INCREMENT",6030,0
+core/src/main/java/org/hibernate/engine/jdbc/ContextualLobCreator.java,1,todo : validate length written versus length given?,6052,0
+core/src/main/java/org/hibernate/engine/jdbc/proxy/PreparedStatementProxyHandler.java,1,todo : is this enough???,5691,0
+core/src/main/java/org/hibernate/engine/StatefulPersistenceContext.java,1,"if we get here, it is possible that we have a proxy 'in the way' of the merge map resolution...
+NOTE: decided to put this here rather than in the above loop as I was nervous about the performance
+of t",6781,0
+core/src/main/java/org/hibernate/event/def/DefaultMergeEventListener.java,2,"TODO: iteratively get transient entities and retry merge until one of the following conditions:
+1) transientCopyCache.size() == 0
+2) transientCopyCache.size() is not decreasing and copyCache.size() is | entity name will not be available for non-POJO entities
+TODO: cache the entity name somewhere so that it is available to this exception",6206,0
+core/src/main/java/org/hibernate/hql/ast/HqlSqlWalker.java,1,"ORDER BY is not supported in a subquery
+TODO: should an exception be thrown if an ORDER BY is in a subquery?",5712,0
+core/src/main/java/org/hibernate/hql/ast/tree/FromElementType.java,1,"If this from element is a collection and the path is a collection property (maxIndex, etc.) then
+generate a sub-query.
+
+NOTE : in the case of this being a collection property in the select, not genera",5941,0
+core/src/main/java/org/hibernate/id/IdentifierGeneratorHelper.java,2,TODO : bind it as 'exact type'?  Not sure if that gains us anything... | TODO : should we check for truncation?,5932,0
+core/src/main/java/org/hibernate/impl/SessionFactoryImpl.java,2,TODO : cleanup entries in queryCaches + allCacheRegions ?,6152,0
+core/src/main/java/org/hibernate/internal/util/jndi/JndiHelper.java,2,"We had problems doing a simple bind operation.  This could very well be caused by missing intermediate
+contexts, so we attempt to create those intermmediate contexts and bind again | todo : remove these once we get the services in place and integrated into the SessionFactory",5694,0
+core/src/main/java/org/hibernate/loader/criteria/CriteriaJoinWalker.java,1,"TODO: deal with side-effects (changes to includeInSelectList, userAliasList, resultTypeList)!!!",5695,0
+core/src/main/java/org/hibernate/loader/DefaultEntityAliases.java,1,TODO: not visible to the user!,5947,0
+core/src/main/java/org/hibernate/loader/entity/EntityJoinWalker.java,1,"NOTE : we override this form here specifically to account for
+fetch profiles.
+TODO : how to best handle criteria queries?",6478,0
+core/src/main/java/org/hibernate/loader/hql/QueryLoader.java,1,todo : scalars???,5942,0
+core/src/main/java/org/hibernate/loader/Loader.java,2,"todo : better solution is to order the index processing based on target indices
+that would account for multiple levels whereas this scheme does not | todo : need a way to signal that this key is resolved and its data resolved",5835,0
+core/src/main/java/org/hibernate/mapping/MappedSuperclass.java,1,"Do not add duplicate properties
+TODO is it efficient enough?",6039,0
+core/src/main/java/org/hibernate/mapping/SimpleValue.java,1,"TODO : we should pass along all settings once \""config lifecycle\"" is hashed out...",5843,0
+core/src/main/java/org/hibernate/persister/entity/AbstractEntityPersister.java,1,TODO: disable batch loading if lockMode > READ?,6016,0
+core/src/main/java/org/hibernate/persister/entity/AbstractPropertyMapping.java,1,"TODO : not quite sure yet of the difference, but this is only needed from annotations for @Id @ManyToOne support",5935,0
+core/src/main/java/org/hibernate/persister/entity/DiscriminatorType.java,1,todo : ???,5927,0
+core/src/main/java/org/hibernate/service/jdbc/internal/JdbcServicesImpl.java,2,todo : add dialect method | todo : add to Environment,5691,0
+core/src/main/java/org/hibernate/service/jmx/internal/JmxServiceImpl.java,1,"todo : should serviceRole come first in ObjectName template?  depends on the groupings we want in the UI.
+as-is mbeans from each sessionFactory are grouped primarily.",5694,0
+core/src/main/java/org/hibernate/sql/ForUpdateFragment.java,1,TODO:  pass lockmode,5990,0
+core/src/main/java/org/hibernate/sql/ordering/antlr/SortSpecification.java,1,"IMPL NOTE : the ordering-spec would be either the 2nd or 3rd child (of the overall sort-spec), if it existed,
+depending on whether a collation-spec was specified.",6412,0
+core/src/main/java/org/hibernate/sql/Template.java,1,"/**
+Takes the where condition provided in the mapping attribute and interpolates the alias.
+Handles sub-selects, quoted identifiers, quoted strings, expressions, SQL functions,
+named parameters.
+
+@par",5848,0
+core/src/main/java/org/hibernate/transform/AliasToBeanResultTransformer.java,1,"IMPL NOTE : due to the delayed population of setters (setters cached
+for performance), we really cannot pro0perly define equality for
+this transformer",6494,1
+core/src/main/java/org/hibernate/transform/CacheableResultTransformer.java,2,"would be nice to be able to have this class extend
+PassThroughResultTransformer, but the default constructor
+is private (as it should be for a singleton) | really more correct to pass index( aliases.getClass(), aliases )",5695,0
+core/src/main/java/org/hibernate/tuple/entity/AbstractEntityTuplizer.java,1,the sizes being off is a much bigger problem that should have been caught already...,5939,0
+core/src/main/java/org/hibernate/type/AbstractStandardBasicType.java,2,todo : have SessionImplementor extend WrapperOptions,5854,0
+core/src/main/java/org/hibernate/type/CharacterArrayClobType.java,1,todo name these annotation types for addition to the registry,5785,0
+core/src/main/java/org/hibernate/type/CollectionType.java,2,TODO: Fix this so it will work for non-POJO entity mode | TODO: check if key contains the owner ID,6650,0
+core/src/main/java/org/hibernate/type/descriptor/java/ArrayMutabilityPlan.java,1,ugh!  cannot find a way to properly define the type signature here to,5854,0
+core/src/main/java/org/hibernate/type/EntityType.java,1,"TODO: should this be Session.instantiate(Persister, ...)?",6575,0
+core/src/main/java/org/hibernate/type/PrimitiveCharacterArrayClobType.java,1,todo name these annotation types for addition to the registry,5785,0
+core/src/main/java/org/hibernate/util/PropertiesHelper.java,1,todo : move to StringHelper?,6856,0
+core/src/main/java/org/hibernate/util/xml/MappingReader.java,1,"this is the version of the code I'd like to use, but it unfortunately works very differently between
+JDK 1.5 ad JDK 1.6.  On 1.5 the vaildation \""passes\"" even with invalid content.
+
+Options:
+1) conti",5724,0
+documentation/quickstart/tutorials/entitymanager/src/test/java/org/hibernate/tutorial/em/EntityManagerIllustrationTest.java,1,"like discussed with regards to SessionFactory, an EntityManagerFactory is set up once for an application
+IMPORTANT: notice how the name here matches the name we gave the persistence-unit in persistenc",5732,0
+documentation/quickstart/tutorials/envers/src/test/java/org/hibernate/tutorial/envers/EnversIllustrationTest.java,1,"like discussed with regards to SessionFactory, an EntityManagerFactory is set up once for an application
+IMPORTANT: notice how the name here matches the name we gave the persistence-unit in persistenc",5722,0
+entitymanager/src/java/org/hibernate/ejb/Ejb3Configuration.java,7,"FIXME send the appropriate entites. | TODO handle inputstream related hbm files | FIXME include hbm xml entities to enhance them but entities is also used to collect annotated entities | TODO check for people calling more than once this method (except buildEMF) | some spec compliance checking
+TODO centralize that? | TODO apparently only used for Tests, get rid of it? | TODO make it really read only (maybe through proxying)",6401,0
+entitymanager/src/java/org/hibernate/ejb/EntityManagerFactoryImpl.java,1,"TODO support discardOnClose, persistencecontexttype?, interceptor,",6401,0
+entitymanager/src/java/org/hibernate/ejb/EntityManagerImpl.java,1,TODO session == null should not happen,6401,0
+entitymanager/src/java/org/hibernate/ejb/EventListenerConfigurator.java,4,"Add the default Hibernate Core PreLoadEventListener
+TODO shouldn't we read the value from getPreLoadEventListeners and add JACC?
+probably a better thing to do as it allows cfg.xml config but this is a | Add the default Hibernate Core PostLoadEventListener
+TODO shouldn't we read the value from getPostLoadEventListeners
+probably a better thing to do as it allows cfg.xml config but this is a big change  | TODO exclude pure hbm file classes?
+TODO move it to each event listener initialize()? | release the jdk internal caches everytime to ensure this
+plays nicely with destroyable class-loaders",6401,0
+entitymanager/src/java/org/hibernate/ejb/instrument/InterceptFieldClassFileTransformer.java,2,TODO change it to a static class to make it faster?,6401,0
+entitymanager/src/java/org/hibernate/ejb/packaging/AbstractJarVisitor.java,3,"FIXME weak algorithm subject to AOOBE | TODO avoid 2 input stream when not needed | FIXME cannot currently have a class filtered twice but matching once
+need to copy the is",6401,0
+entitymanager/src/java/org/hibernate/ejb/packaging/ExplodedJarVisitor.java,1,"FIXME shameful copy of FileZippedJarVisitor.doProcess()
+TODO long term fix is to introduce a process interface (closure like) to addElements and then share the code",6401,0
+entitymanager/src/java/org/hibernate/ejb/packaging/FileZippedJarVisitor.java,1,FIXME copy sucks,6401,0
+entitymanager/src/java/org/hibernate/ejb/packaging/InputStreamZippedJarVisitor.java,3,really should catch IOException but Eclipse is buggy and raise NPE... | FIXME copy sucks | this is bad cause we actually read everything instead of walking it lazily,6401,0
+entitymanager/src/java/org/hibernate/ejb/packaging/PersistenceXmlLoader.java,1,fall back to the natural (Hibernate) way of description,6401,0
+entitymanager/src/java/org/hibernate/ejb/QueryImpl.java,1,TODO:,6401,1
+entitymanager/src/main/java/org/hibernate/ejb/AbstractEntityManagerImpl.java,5,"timeout of 0
+TODO check that if we have UPGRADE_NOWAIT we have a timeout of zero? | todo : should these 2 sizes match *always*? | FIXME should we remove all calls to this method and use convert(RuntimeException) ? | TODO clean this up to avoid downcasting | TODO support other NativeSQLQueryReturn type. For now let it go.",5998,1
+entitymanager/src/main/java/org/hibernate/ejb/AbstractQueryImpl.java,2,stupid spec... MAX_VALUE?? | TODO : treat as hint?,6102,0
+entitymanager/src/main/java/org/hibernate/ejb/criteria/CriteriaQueryCompiler.java,1,todo : is null valid?,5998,0
+entitymanager/src/main/java/org/hibernate/ejb/criteria/CriteriaQueryImpl.java,2,"TODO : assuming this should be a conjuntion, but the spec does not say specifically... | if we get here, the query defined no selection but defined a single root of the same type as the
+criteria query return, so we use that as the implicit selection
+
+todo : should we put an implicit marke",6128,0
+entitymanager/src/main/java/org/hibernate/ejb/criteria/CriteriaSubqueryImpl.java,1,"TODO : assuming this should be a conjuntion, but the spec does not say specifically...",6128,0
+entitymanager/src/main/java/org/hibernate/ejb/criteria/expression/EntityTypeExpression.java,1,todo : is it valid for this to get rendered into the query itself?,6043,0
+entitymanager/src/main/java/org/hibernate/ejb/criteria/expression/MapEntryExpression.java,1,don't think this is valid outside of select clause...,5968,0
+entitymanager/src/main/java/org/hibernate/ejb/criteria/expression/PathTypeExpression.java,1,todo : is it valid for this to get rendered into the query itself?,5968,0
+entitymanager/src/main/java/org/hibernate/ejb/criteria/MapKeyHelpers.java,3,TODO : ???,6124,0
+entitymanager/src/main/java/org/hibernate/ejb/criteria/path/AbstractFromImpl.java,7,"TODO : runtime check that the attribute in fact belongs to this From's model/bindable | TODO : combine Fetch and Join hierarchies (JoinImplementor extends Join,Fetch???) | IMPL NOTE : another means from handling correlations is to create a series of
+specialized From implementations that represent the correlation roots.  While
+that may be cleaner code-wise, it is certain",5968,0
+entitymanager/src/main/java/org/hibernate/ejb/criteria/path/AbstractPathImpl.java,1,"Make sure we delegate up to our source (eventually up to the path root) to
+prepare the path properly.",5968,0
+entitymanager/src/main/java/org/hibernate/ejb/criteria/path/MapKeyHelpers.java,4,"TODO : ok???  the attribute is in fact bindable, but its type signature is different | TODO : ???",5968,0
+entitymanager/src/main/java/org/hibernate/ejb/criteria/path/PluralAttributePath.java,1,"type (Map, Set, etc) while the \""bindable\"" for a collection is the
+elements.
+
+TODO : throw exception instead?",5968,0
+entitymanager/src/main/java/org/hibernate/ejb/criteria/predicate/ExplicitTruthValueCheck.java,1,"TODO : given that JPA supports only TRUE and FALSE, can this be handled just with negation?",6128,0
+entitymanager/src/main/java/org/hibernate/ejb/criteria/QueryBuilderImpl.java,2,TODO : what other specific types?  any?,6117,0
+entitymanager/src/main/java/org/hibernate/ejb/Ejb3Configuration.java,1,"Best I can tell, 'workingVars' is some form of additional configuration contract.
+But it does not correlate 1-1 to EMF/SF settings.  It really is like a set of de-typed
+additional configuration info. ",5949,0
+entitymanager/src/main/java/org/hibernate/ejb/EntityManagerFactoryImpl.java,7,"FIXME
+To change body of implemented methods use File | Settings | File Templates. | TODO : if we want to allow an optional clearing of all cache data, the additional calls would be: | TODO : cache the cache reference? | TODO does that work for @IdClass?",6213,0
+entitymanager/src/main/java/org/hibernate/ejb/metamodel/AttributeFactory.java,2,"TODO : is this even possible???  Really OneToMany should be describing the
+element value within a o.h.mapping.Collection (see logic branch above) | FIXME and honor targetEntity?",5984,1
+entitymanager/src/main/java/org/hibernate/ejb/metamodel/MetadataContext.java,3,"todo : this does not account for @MappeSuperclass, mainly because this is not being tracked in our
+internal metamodel as populated from the annotatios properly | FIXME we are an Hibernate embedded id (ie not type) | FIXME take care of declared vs non declared property",6040,0
+entitymanager/src/main/java/org/hibernate/ejb/metamodel/MetamodelImpl.java,2,TODO remove / reduce @SW scope,6038,0
+entitymanager/src/main/java/org/hibernate/ejb/QueryImpl.java,3,"stupid spec MAX_VALUE?? | FIXME
+To change body of implemented methods use File | Settings | File Templates. | a named param, for not delegate out.  Eventually delegate *into* this method...",6213,2
+entitymanager/src/main/java/org/hibernate/ejb/util/PersistenceUtilHelper.java,1,TODO not really thread-safe,5830,0
+entitymanager/src/test/java/org/hibernate/ejb/criteria/basic/PredicateTest.java,2,"yes this is a retarded case, but explicitly allowed in the JPA spec",5966,0
+entitymanager/src/test/java/org/hibernate/ejb/test/lock/LockTest.java,7,TODO:  replace dialect instanceof test with a Dialect.hasCapability (e.g. supportsPessimisticWriteLock) | TODO:  replace dialect instanceof test with a Dialect.hasCapability | TODO:  replace dialect instanceof test with a Dialect.hasCapability (e.g. supportsPessimisticLockTimeout),5942,0
+entitymanager/src/test/java/org/hibernate/ejb/test/metadata/MetadataTest.java,1,"TODO test embedded
+todo test plural",6118,1
+entitymanager/src/test/java/org/hibernate/ejb/test/packaging/JarVisitorTest.java,2,TODO - shouldn't  ExplodedJarVisitor take care of a trailing slash? | // TODO - shouldn't  ExplodedJarVisitor take care of a trailing slash?,5921,0
+entitymanager/src/test/org/hibernate/ejb/test/callbacks/Plant.java,1,some (stupid) id generation,6401,0
+entitymanager/src/test/org/hibernate/ejb/test/packaging/JarVisitorTest.java,1,TODO should we fix the name here to reach defaultpar rather than nestedjar ??,6401,0
+envers/src/main/java/org/hibernate/envers/entities/mapper/MultiPropertyMapper.java,1,This is needed for second pass to work properly in the components mapper,6340,0
+envers/src/main/java/org/hibernate/envers/entities/mapper/relation/ToOneIdMapper.java,1,"If this property is originally non-insertable, but made insertable because it is in a many-to-one \""fake\""
+bi-directional relation, we always store the \""old\"", unchaged data, to prevent storing chang",5991,0
+envers/src/main/java/org/hibernate/envers/reader/AuditReaderImpl.java,1,"todo: if a class is not versioned from the beginning, there's a missing ADD rev - what then?",6401,0
+envers/src/main/java/org/jboss/envers/configuration/EntitiesConfigurator.java,2,TODO,6405,0
+envers/src/main/java/org/jboss/envers/configuration/metadata/CollectionMetadataGenerator.java,2,All other kinds of relations require a middle (join) table. | Generating the query generator - it should read directly from the related entity.,6405,0
+envers/src/main/java/org/jboss/envers/configuration/metadata/VersionsMetadataGenerator.java,1,"If so, there is some inheritance scheme -> using the persister hack.",6405,0
+envers/src/main/java/org/jboss/envers/entities/EntityInstantiator.java,1,"Putting the newly created entity instance into the first level cache, in case a one-to-one bidirectional
+relation is present (which is eagerly loaded).",6405,0
+envers/src/main/java/org/jboss/envers/entity/VersionsInheritanceEntityPersister.java,1,A hack for http://opensource.atlassian.com/projects/hibernate/browse/HHH-3351,6405,0
+envers/src/main/java/org/jboss/envers/reader/VersionsReaderImpl.java,1,"todo: if a class is not versioned from the beginning, there's a missing ADD rev - what then?",6405,0
+envers/src/main/java/org/jboss/envers/tools/ConcurrentReferenceHashMap.java,2,"The basic strategy is to subdivide the table among Segments,
+each of which itself is a concurrently readable hash table. | If mcsum happens to be zero, then we know we got a snapshot
+before any modifications at all were made.  This is
+probably common enough to bother tracking.",6405,0
+envers/src/main/java/org/jboss/envers/tools/reflection/YReflectionManager.java,1,TODO - what if there it's a pure Hibernate envirionment?,6405,0
+envers/src/test/java/org/hibernate/envers/test/integration/accesstype/MixedAccessTypeEntity.java,1,"TODO: this should be on the property. But how to discover in AnnotationsMetadataReader that the
+we should read annotations from fields, even though the access type is \""property\""?",6398,0
+envers/src/test/java/org/hibernate/envers/test/integration/jta/JtaExceptionListener.java,1,"Trying to persist an entity - however the listener should throw an exception, so the entity
+shouldn't be persisted",5784,0
+envers/src/test/java/org/hibernate/envers/test/integration/manytomany/biowned/BasicBiowned.java,1,"Although it would seem that when modifying references both entities should be marked as modified, because
+ownly the owning side is notified (because of the bi-owning mapping), a revision is created on",6003,0
+envers/src/test/java/org/hibernate/envers/test/integration/onetomany/detached/JoinColumnBidirectionalList.java,1,Shouldn't get written,5991,0
+envers/src/test/java/org/hibernate/envers/test/integration/reventity/ExceptionListener.java,1,"Trying to persist an entity - however the listener should throw an exception, so the entity
+shouldn't be persisted",6217,0
+hibernate-core/src/main/java/org/hibernate/cfg/annotations/reflection/JPAOverridenAnnotationReader.java,1,TODO: support map-key-join-column,5625,0
+hibernate-core/src/main/java/org/hibernate/dialect/SQLServer2005Dialect.java,1,HHH-5715 bug fix,5661,0
+hibernate-core/src/main/java/org/hibernate/dialect/SQLServer2008Dialect.java,1,As mentioned before I don't think that we really need this last order by clause,5674,0
+hibernate-core/src/main/java/org/hibernate/engine/jdbc/internal/JdbcResourceRegistryImpl.java,1,"TODO: can ConcurrentModificationException still happen???
+Following is from old AbstractBatcher...",5632,0
+hibernate-core/src/main/java/org/hibernate/engine/jdbc/spi/ConnectionManager.java,2,TODO: should this be removd from the SPI?,5632,0
+hibernate-core/src/main/java/org/hibernate/engine/jdbc/spi/SqlExceptionHelper.java,1,workaround for WebLogic,5546,0
+hibernate-core/src/main/java/org/hibernate/engine/SessionFactoryImplementor.java,1,TODO: deprecate???,5640,0
+hibernate-core/src/main/java/org/hibernate/engine/transaction/internal/jdbc/JdbcIsolationDelegate.java,1,todo : should we use a connection proxy here?,5549,0
+hibernate-core/src/main/java/org/hibernate/engine/transaction/internal/TransactionCoordinatorImpl.java,1,"IMPL NOTE : At this point the local callback is the \""maybe\"" one.  The only time that needs to change is if
+we are able to successfully register the transaction synchronization in which case the loca",5549,0
+hibernate-core/src/main/java/org/hibernate/HibernateLogger.java,1,TODO: tracef,5571,0
+hibernate-core/src/main/java/org/hibernate/hql/classic/FromParser.java,1,TODO alias should be null here,5628,0
+hibernate-core/src/main/java/org/hibernate/metamodel/logical/AbstractAttributeContainer.java,1,"todo : how to best \""secure\"" this?",5687,0
+hibernate-core/src/main/java/org/hibernate/persister/collection/AbstractCollectionPersister.java,2,TODO: deprecate??? | TODO: needed???,5640,0
+hibernate-core/src/main/java/org/hibernate/persister/entity/AbstractEntityPersister.java,2,TODO: I am not so sure about the exception handling in this bit! | TODO : shouldn't inserts be Expectations.NONE?,5549,0
+hibernate-core/src/main/java/org/hibernate/persister/spi/PersisterFactory.java,1,"TODO: is it really neceassry to provide Configuration to CollectionPersisters ?
+Should it not be enough with associated class ? or why does EntityPersister's not get access to configuration ?
+
+The onl",5547,0
+hibernate-core/src/main/java/org/hibernate/service/internal/ServiceInitializer.java,1,"todo : because of the use of proxies, this is no longer returning null here...",5557,0
+hibernate-core/src/main/java/org/hibernate/service/internal/ServiceRegistryImpl.java,1,for now just hardcode the javassist factory,5557,0
+hibernate-core/src/main/java/org/hibernate/service/jdbc/dialect/internal/BasicDialectResolver.java,1,TODO: should this disappear???,5641,0
+hibernate-core/src/test/java/org/hibernate/dialect/resolver/DialectFactoryTest.java,1,TODO: is it still possible to build a dialect using a class name???,5641,0
+hibernate-core/src/test/java/org/hibernate/test/common/jta/AtomikosJtaPlatform.java,1,todo : extract sys props to handle functional testing...,5549,0
+hibernate-core/src/test/java/org/hibernate/test/jdbc/GeneralWorkTest.java,1,"in this current form, users must handle try/catches themselves for proper resource release",5539,0
+hibernate-core/src/test/java/org/hibernate/test/jdbc/proxies/AggressiveReleaseTest.java,2,let the close of the logical connection below release all resources (hopefully)...,5688,0
+hibernate-entitymanager/src/main/java/org/hibernate/ejb/EntityManagerFactoryImpl.java,1,FIXME: Get rid of this temporary way of creating the service registry for EM,5641,0
+hibernate-infinispan/src/main/java/org/hibernate/cache/infinispan/query/QueryResultsRegionImpl.java,1,"If the region is not valid, skip cache store to avoid going remote to retrieve the query.
+The aim of this is to maintain same logic/semantics as when state transfer was configured.
+TODO: Once https://",5626,0
+hibernate-infinispan/src/main/java/org/hibernate/cache/infinispan/timestamp/TimestampsRegionImpl.java,1,"If the region is not valid, skip cache store to avoid going remote to retrieve the query.
+The aim of this is to maintain same logic/semantics as when state transfer was configured.
+TODO: Once https://",5626,0
+src/java/org/hibernate/cfg/JDBCBinder.java,13,"TODO: this naively just create an entity per table
+should have an opt-out option to mark some as helper tables, subclasses etc. | TODO: configurable ? | TODO: detect this and generate a \""permutation\"" of it ? | MASTER TODO: allow overriding collection type | TODO: handle \""the other side should influence the name\"" | TODO: find the other foreignkey and choose the other side. | todo: handle better ? | TODO: need to look one step further for many-to-many! | Master.setOfChildren+
+TODO: allow overriding this | TODO: if many-to-one is excluded should the column be marked as processed so it won't show up at all ? | TODO: this method mutates the column if the types does not match...not good.
+maybe we should copy the column instead before calling this method. | TODO: merge from each column ? | Workaround to avoid DependantValue to create foreignkey just because reference columns are not the same + no need to create keys already in the db!",5782,0
+src/java/org/hibernate/cfg/JDBCMetaDataConfiguration.java,1,TODO: doing nothing to avoid creating foreignkeys which is NOT actually in the database.,5782,0
+src/java/org/hibernate/cfg/reveng/DatabaseCollector.java,1,split up to readonly/writeable interface,5782,0
+src/java/org/hibernate/cfg/reveng/DefaultReverseEngineeringStrategy.java,2,we don't know better | TODO: maybe use the middleTable name here ?,5782,0
+src/java/org/hibernate/cfg/reveng/dialect/AbstractMetaDataDialect.java,3,"Let's give the user some feedback. The exception
+is probably related to incorrect schema configuration. | TODO: use jdbc metadata to decide on this. but for now we just handle the most typical cases. | TODO: handle quoted requests (just strip it ?)",5782,0
+src/java/org/hibernate/cfg/reveng/JDBCReader.java,5,"TODO: if there is a relation to a column which is not a pk
+then handle it as a property-ref | TODO: ignore ? | TODO: the code below detects if the reveng is multischema'ed, but not used for anything yet. should be used to remove schema/catalog info from output if only one schema/catalog used. | TODO: should we just pick it up and fill it up with whatever we get from the db instead ? | mark columns that are unique TODO: multiple columns are not unique on their own.",5782,0
+src/java/org/hibernate/cfg/reveng/OverrideBinder.java,2,only possible if foreignColumns is explicitly specified (workaround on aligncolumns),5782,0
+src/java/org/hibernate/cfg/reveng/OverrideRepository.java,1,TODO: optimize,5782,0
+src/java/org/hibernate/cfg/reveng/TableFilter.java,1,TODO: very basic substring matching. Possibly include regex functionallity ? (jdk 1.4 dep),5782,0
+src/java/org/hibernate/tool/ant/ConfigurationTask.java,1,"TODO: should we \""inherit\"" from the ant projects properties ?",5782,0
+src/java/org/hibernate/tool/ant/ExporterTask.java,1,refactor out so not dependent on Ant ?,5782,0
+src/java/org/hibernate/tool/hbm2x/Cfg2HbmTool.java,1,todo: return null?,5782,0
+src/java/org/hibernate/tool/hbm2x/Cfg2JavaTool.java,1,"TODO: should consult exporter/cfg2java tool for cached POJOEntities....or maybe not since they
+have their own state...",5782,0
+src/java/org/hibernate/tool/hbm2x/doc/DocFileManager.java,1,TODO Can we implement equals method in BasicPOJO to avoid this loop?,5782,0
+src/java/org/hibernate/tool/hbm2x/doc/DocHelper.java,5,"TODO: get it from somewhere \""cached\"". | TODO we should try to get the value from value here
+Eat Exception?? | TODO: Fix this when we find a way to get the type or
+the mapping. | TODO We haven't taken into account Array? | TODO: do we need to also remove component id properties?",5782,0
+src/java/org/hibernate/tool/hbm2x/DocExporter.java,1,TODO: dump system.err,5782,0
+src/java/org/hibernate/tool/hbm2x/Hbm2DDLExporter.java,1,working with reflection as no idea what hibernate core version is used,5782,0
+src/java/org/hibernate/tool/hbm2x/HbmLintExporter.java,1,TODO: make non-hardwired,5782,0
+src/java/org/hibernate/tool/hbm2x/pojo/BasicPOJOClass.java,6,"TODO: calendar etc. ? | TODO formula in multicolumns not supported by annotations | TODO support secondary table | get the \""opposite\"" collectionnae for a property. Currently a \""hack\"" that just uses the same naming algorithm as in reveng, will fail on more general models! | TODO defaultModifiers | TODO: default init for arrays ?",5782,0
+src/java/org/hibernate/tool/hbm2x/pojo/ComponentPOJOClass.java,1,"TODO: is this \""nice\"" ? shouldn't it be a user choice ?",5782,0
+src/java/org/hibernate/tool/hbm2x/pojo/EntityPOJOClass.java,11,"TODO: is this \""nice\"" ? shouldn't it be a user choice ? | Need to skip <properties> element which are defined via \""embedded\"" components
+Best if we could return an intelligent iterator, but for now we just iterate explicitly. | TODO: how to handle generic now?? | TODO: shouldn't this be unique, e.g. entityName + sequenceName (or just sequencename) ? | TODO HA does not support initialValue and allocationSize | TODO formula in multicolumns not supported by annotations | TODO not supported by HA | TODO handle referenced column name, this is a hard one | TODO support secondary table | TODO do the @OneToMany @JoinTable
+TODO composite element | TODO we should check the table too",5782,0
+src/java/org/hibernate/tool/hbm2x/pojo/ImportContextImpl.java,1,"TODO: share this somehow, redundant from Cfg2JavaTool",5782,0
+src/java/org/hibernate/tool/hbm2x/POJOExporter.java,1,TODO: this safe guard should be in the root templates instead for each variable they depend on.,5782,0
+src/java/org/hibernate/tool/hbm2x/QueryExporter.java,1,TODO: this is not the most efficient loop (opening/closing file),5782,0
+src/java/org/hibernate/tool/hbm2x/StringUtils.java,3,"Java default is 16, probably too small | improved with code from  cybertiger@cyberiantiger.org
+unicode from him, and defaul for < 32's. | could implement manually, but simple way is to reuse other,
+probably slower, methods.",5782,0
+src/java/org/hibernate/tool/hbm2x/TemplateHelper.java,3,"TODO: warn | Workaround that Linux/JVM apparently can't handle mkdirs of File's with current dir references. | TODO: I would like to remove this, but don't know another way to actually get the list possible \""root\"" keys for debugging.",5782,0
+src/java/org/hibernate/tool/hbm2x/visitor/EntityNameFromValueVisitor.java,1,TODO: return o.getTypeName() ? (it is not an association),5782,0
+src/java/org/hibernate/tool/hbmlint/detector/SchemaByMetaDataDetector.java,4,TODO: move this check into something that could check per class or collection instead. | BIG HACK - should probably utilize the table cache before going to the jdbcreader :( | TODO: this needs to be able to know if a type is truly compatible or not. Right now it requires an exact match. | TODO: sqltype name string,5782,0
+src/java/org/hibernate/tool/ide/completion/ConfigurationCompletion.java,2,TODO..list/map | TODO: we should extract the needed functionallity from this hbm2java class.,5782,0
+src/java/org/hibernate/tool/ide/completion/HQLAnalyzer.java,1,TODO: we should detect this and create the list directly instead of relying on the tokenizer,5782,0
+src/java/org/hibernate/tool/stat/StatisticsTreeModel.java,3,hack,5782,0
+src/test/org/hibernate/tool/hbm2x/Hbm2CfgTest.java,1,Hack for seam-gen console configurations,5782,0
+src/test/org/hibernate/tool/ide/completion/ModelCompletionTest.java,1,TODO: is non-aliased references allowed ?,5782,0
+src/test/org/hibernate/tool/test/jdbc2cfg/BasicMultiSchemaTest.java,1,"TODO: we cannot call getSqlType(dialect,cfg) without a",5782,0
+src/test/org/hibernate/tool/test/jdbc2cfg/BasicTest.java,1,"TODO: we cannot call getSqlType(dialect,cfg) without a",5782,0
+src/test/org/hibernate/tool/test/jdbc2cfg/ForeignKeysTest.java,1,todo - link where pk is fk to something,5782,0
+src/test/org/hibernate/tool/test/jdbc2cfg/MetaDataTest.java,1,"TODO: we cannot call getSqlType(dialect,cfg) without a",5782,0
+src/test/org/hibernate/tool/test/jdbc2cfg/OverrideBinderTest.java,1,TODO: test sequence of meta,5782,0
+src/test/org/hibernate/tool/test/jdbc2cfg/PersistentClassesTest.java,1,todo - link where pk is fk to something,5782,0
+src/test/org/hibernate/tool/test/jdbc2cfg/RevEngForeignKeyTests.java,1,maybe we should ignore the definition and only listen to what is overwritten ? For now we error.,5782,0
+src/test/org/hibernate/tool/test/TestHelper.java,1,TODO: unused private,5782,0
+src/test5.0/org/hibernate/tool/hbm2x/Hbm2JavaEjb3ForJDK50Test.java,1,hack to avoid not-null execption,5782,0
+src/testsupport/AnyKindOfUserType.java,1,"Just used for testing classpath loading for ant tasks!
+Do not use as basis for your own usertypes!
+
+Created on 25-Feb-2005
+",5782,0
+testing/src/main/java/org/hibernate/test/tm/SimpleJtaTransactionImpl.java,1,todo : find the spec-allowable statuses during which synch can be registered...,6733,0
+testsuite/src/test/java/org/hibernate/jdbc/GeneralWorkTest.java,1,"in this current form, users must handle try/catches themselves for proper resource release",6801,0
+testsuite/src/test/java/org/hibernate/test/cfg/CacheableFileTest.java,1,"be nice
+noinspection ResultOfMethodCallIgnored",6024,0
+testsuite/src/test/java/org/hibernate/test/discriminator/DiscriminatorTest.java,2,assert that executing the queries polymorphically returns the same proxy | assert that executing the queries polymorphically returns the same Employee instance,6767,0
+testsuite/src/test/java/org/hibernate/test/event/collection/BrokenCollectionEventTest.java,2,"The following fails for the same reason as testUpdateDetachedParentNoChildrenToNullFailureExpected
+When that issue is fixed, this one should also be fixed and moved into AbstractCollectionEventTest. | The following two tests fail for the same reason as testUpdateParentNoChildrenToNullFailureExpected
+When that issue is fixed, this one should also be fixed and moved into AbstractCollectionEventTest.",6678,0
+testsuite/src/test/java/org/hibernate/test/filter/DynamicFilterTest.java,1,... then a silly one...,6431,0
+testsuite/src/test/java/org/hibernate/test/hql/BulkManipulationTest.java,1,"http://groups.google.com/group/h2-database/t/5548ff9fd3abdb7
+this is fixed in H2 1.2.140",5768,0
+testsuite/src/test/java/org/hibernate/test/manytomany/batchload/BatchedManyToManyTest.java,1,"ugh, this is the best way I could come up with to assert this.
+unfortunately, this is highly dependent on the dialect and its
+outer join fragment.  But at least this wil fail on the majority
+of dialec",6153,0
+testsuite/src/test/java/org/hibernate/test/nonflushedchanges/SaveOrUpdateTest.java,1,"the proxy is replaced by its implementation
+TODO: find out if this is how this should work...",6018,0
+testsuite/src/test/java/org/hibernate/test/readonly/ReadOnlyVersionedNodesTest.java,2,"hmmm, why is was version updated? | / hmmm, why is was version updated?",6214,0
+testsuite/src/test/java/org/hibernate/test/sql/hand/query/NativeSQLQueriesTest.java,1,todo : see http://opensource.atlassian.com/projects/hibernate/browse/HHH-3908,6209,0
+tools/src/java/org/hibernate/cfg/JDBCBinder.java,13,"TODO: this naively just create an entity per table
+should have an opt-out option to mark some as helper tables, subclasses etc. | TODO: configurable ? | TODO: detect this and generate a \""permutation\"" of it ? | MASTER TODO: allow overriding collection type | TODO: handle \""the other side should influence the name\"" | TODO: find the other foreignkey and choose the other side. | todo: handle better ? | TODO: need to look one step further for many-to-many! | Master.setOfChildren+
+TODO: allow overriding this | TODO: if many-to-one is excluded should the column be marked as processed so it won't show up at all ? | TODO: this method mutates the column if the types does not match...not good.
+maybe we should copy the column instead before calling this method. | TODO: merge from each column ? | Workaround to avoid DependantValue to create foreignkey just because reference columns are not the same + no need to create keys already in the db!",5782,0
+tools/src/java/org/hibernate/cfg/JDBCMetaDataConfiguration.java,1,TODO: doing nothing to avoid creating foreignkeys which is NOT actually in the database.,5782,0
+tools/src/java/org/hibernate/cfg/reveng/DatabaseCollector.java,1,split up to readonly/writeable interface,5782,0
+tools/src/java/org/hibernate/cfg/reveng/DefaultReverseEngineeringStrategy.java,2,we don't know better | TODO: maybe use the middleTable name here ?,5782,0
+tools/src/java/org/hibernate/cfg/reveng/dialect/AbstractMetaDataDialect.java,3,"Let's give the user some feedback. The exception
+is probably related to incorrect schema configuration. | TODO: use jdbc metadata to decide on this. but for now we just handle the most typical cases. | TODO: handle quoted requests (just strip it ?)",5782,0
+tools/src/java/org/hibernate/cfg/reveng/JDBCReader.java,5,"TODO: if there is a relation to a column which is not a pk
+then handle it as a property-ref | TODO: ignore ? | TODO: the code below detects if the reveng is multischema'ed, but not used for anything yet. should be used to remove schema/catalog info from output if only one schema/catalog used. | TODO: should we just pick it up and fill it up with whatever we get from the db instead ? | mark columns that are unique TODO: multiple columns are not unique on their own.",5782,0
+tools/src/java/org/hibernate/cfg/reveng/OverrideBinder.java,2,only possible if foreignColumns is explicitly specified (workaround on aligncolumns),5782,0
+tools/src/java/org/hibernate/cfg/reveng/OverrideRepository.java,1,TODO: optimize,5782,0
+tools/src/java/org/hibernate/cfg/reveng/TableFilter.java,1,TODO: very basic substring matching. Possibly include regex functionallity ? (jdk 1.4 dep),5782,0
+tools/src/java/org/hibernate/tool/ant/ConfigurationTask.java,1,"TODO: should we \""inherit\"" from the ant projects properties ?",5782,0
+tools/src/java/org/hibernate/tool/ant/ExporterTask.java,1,refactor out so not dependent on Ant ?,5782,0
+tools/src/java/org/hibernate/tool/hbm2x/Cfg2HbmTool.java,1,todo: return null?,5782,0
+tools/src/java/org/hibernate/tool/hbm2x/Cfg2JavaTool.java,1,"TODO: should consult exporter/cfg2java tool for cached POJOEntities....or maybe not since they
+have their own state...",5782,0
+tools/src/java/org/hibernate/tool/hbm2x/doc/DocFileManager.java,1,TODO Can we implement equals method in BasicPOJO to avoid this loop?,5782,0
+tools/src/java/org/hibernate/tool/hbm2x/doc/DocHelper.java,5,"TODO: get it from somewhere \""cached\"". | TODO we should try to get the value from value here
+Eat Exception?? | TODO: Fix this when we find a way to get the type or
+the mapping. | TODO We haven't taken into account Array? | TODO: do we need to also remove component id properties?",5782,0
+tools/src/java/org/hibernate/tool/hbm2x/DocExporter.java,1,TODO: dump system.err,5782,0
+tools/src/java/org/hibernate/tool/hbm2x/Hbm2DDLExporter.java,1,working with reflection as no idea what hibernate core version is used,5782,0
+tools/src/java/org/hibernate/tool/hbm2x/HbmLintExporter.java,1,TODO: make non-hardwired,5782,0
+tools/src/java/org/hibernate/tool/hbm2x/pojo/BasicPOJOClass.java,6,"TODO: calendar etc. ? | TODO formula in multicolumns not supported by annotations | TODO support secondary table | get the \""opposite\"" collectionnae for a property. Currently a \""hack\"" that just uses the same naming algorithm as in reveng, will fail on more general models! | TODO defaultModifiers | TODO: default init for arrays ?",5782,0
+tools/src/java/org/hibernate/tool/hbm2x/pojo/ComponentPOJOClass.java,1,"TODO: is this \""nice\"" ? shouldn't it be a user choice ?",5782,0
+tools/src/java/org/hibernate/tool/hbm2x/pojo/EntityPOJOClass.java,11,"TODO: is this \""nice\"" ? shouldn't it be a user choice ? | Need to skip <properties> element which are defined via \""embedded\"" components
+Best if we could return an intelligent iterator, but for now we just iterate explicitly. | TODO: how to handle generic now?? | TODO: shouldn't this be unique, e.g. entityName + sequenceName (or just sequencename) ? | TODO HA does not support initialValue and allocationSize | TODO formula in multicolumns not supported by annotations | TODO not supported by HA | TODO handle referenced column name, this is a hard one | TODO support secondary table | TODO do the @OneToMany @JoinTable
+TODO composite element | TODO we should check the table too",5782,0
+tools/src/java/org/hibernate/tool/hbm2x/pojo/ImportContextImpl.java,1,"TODO: share this somehow, redundant from Cfg2JavaTool",5782,0
+tools/src/java/org/hibernate/tool/hbm2x/POJOExporter.java,1,TODO: this safe guard should be in the root templates instead for each variable they depend on.,5782,0
+tools/src/java/org/hibernate/tool/hbm2x/QueryExporter.java,1,TODO: this is not the most efficient loop (opening/closing file),5782,0
+tools/src/java/org/hibernate/tool/hbm2x/StringUtils.java,3,"Java default is 16, probably too small | improved with code from  cybertiger@cyberiantiger.org
+unicode from him, and defaul for < 32's. | could implement manually, but simple way is to reuse other,
+probably slower, methods.",5782,0
+tools/src/java/org/hibernate/tool/hbm2x/TemplateHelper.java,3,"TODO: warn | Workaround that Linux/JVM apparently can't handle mkdirs of File's with current dir references. | TODO: I would like to remove this, but don't know another way to actually get the list possible \""root\"" keys for debugging.",5782,0
+tools/src/java/org/hibernate/tool/hbm2x/visitor/EntityNameFromValueVisitor.java,1,TODO: return o.getTypeName() ? (it is not an association),5782,0
+tools/src/java/org/hibernate/tool/hbmlint/detector/SchemaByMetaDataDetector.java,4,TODO: move this check into something that could check per class or collection instead. | BIG HACK - should probably utilize the table cache before going to the jdbcreader :( | TODO: this needs to be able to know if a type is truly compatible or not. Right now it requires an exact match. | TODO: sqltype name string,5782,0
+tools/src/java/org/hibernate/tool/ide/completion/ConfigurationCompletion.java,2,TODO..list/map | TODO: we should extract the needed functionallity from this hbm2java class.,5782,0
+tools/src/java/org/hibernate/tool/ide/completion/HQLAnalyzer.java,1,TODO: we should detect this and create the list directly instead of relying on the tokenizer,5782,0
+tools/src/java/org/hibernate/tool/stat/StatisticsTreeModel.java,3,hack,5782,0
+tools/src/test/org/hibernate/tool/hbm2x/Hbm2CfgTest.java,1,Hack for seam-gen console configurations,5782,0
+tools/src/test/org/hibernate/tool/ide/completion/ModelCompletionTest.java,1,TODO: is non-aliased references allowed ?,5782,0
+tools/src/test/org/hibernate/tool/test/jdbc2cfg/BasicMultiSchemaTest.java,1,"TODO: we cannot call getSqlType(dialect,cfg) without a",5782,0
+tools/src/test/org/hibernate/tool/test/jdbc2cfg/BasicTest.java,1,"TODO: we cannot call getSqlType(dialect,cfg) without a",5782,0
+tools/src/test/org/hibernate/tool/test/jdbc2cfg/ForeignKeysTest.java,1,todo - link where pk is fk to something,5782,0
+tools/src/test/org/hibernate/tool/test/jdbc2cfg/MetaDataTest.java,1,"TODO: we cannot call getSqlType(dialect,cfg) without a",5782,0
+tools/src/test/org/hibernate/tool/test/jdbc2cfg/OverrideBinderTest.java,1,TODO: test sequence of meta,5782,0
+tools/src/test/org/hibernate/tool/test/jdbc2cfg/PersistentClassesTest.java,1,todo - link where pk is fk to something,5782,0
+tools/src/test/org/hibernate/tool/test/jdbc2cfg/RevEngForeignKeyTests.java,1,maybe we should ignore the definition and only listen to what is overwritten ? For now we error.,5782,0
+tools/src/test/org/hibernate/tool/test/TestHelper.java,1,TODO: unused private,5782,0
+tools/src/test5.0/org/hibernate/tool/hbm2x/Hbm2JavaEjb3ForJDK50Test.java,1,hack to avoid not-null execption,5782,0
+tools/src/testsupport/AnyKindOfUserType.java,1,"Just used for testing classpath loading for ant tasks!
+Do not use as basis for your own usertypes!
+
+Created on 25-Feb-2005
+",5782,0

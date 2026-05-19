@@ -1,0 +1,16 @@
+rank,file,line,rule,type,message,effort
+1,pyodbc.py,62,python:S3776,CODE_SMELL,Refactor this function to reduce its Cognitive Complexity from 36 to the 15 allowed.,26min
+2,base.py,1702,python:S1845,CODE_SMELL,"Rename field ""visit_DATETIME"" to prevent any misunderstanding/clash with method ""visit_datetime"" defined on line 1698",10min
+3,base.py,1739,python:S1845,CODE_SMELL,"Rename method ""visit_TEXT"" to prevent any misunderstanding/clash with method ""visit_text"" defined on line 1724",10min
+4,base.py,1758,python:S1845,CODE_SMELL,"Rename field ""visit_DATE"" to prevent any misunderstanding/clash with method ""visit_date"" defined on line 1754",10min
+5,base.py,1763,python:S1845,CODE_SMELL,"Rename method ""visit_time"" to prevent any misunderstanding/clash with method ""visit_TIME"" defined on line 1685",10min
+6,base.py,2533,python:S3776,CODE_SMELL,Refactor this function to reduce its Cognitive Complexity from 20 to the 15 allowed.,10min
+7,pyodbc.py,35,secrets:S6703,VULNERABILITY,Make sure this database password gets changed and removed from the code.,30min
+8,aiomysql.py,118,python:S1186,CODE_SMELL,"Add a nested comment explaining why this method is empty, or complete the implementation.",5min
+9,aiomysql.py,274,python:S1186,CODE_SMELL,"Add a nested comment explaining why this method is empty, or complete the implementation.",5min
+10,aiomysql.py,278,python:S1186,CODE_SMELL,"Add a nested comment explaining why this method is empty, or complete the implementation.",5min
+11,aiomysql.py,312,python:S2638,CODE_SMELL,Add missing parameters _translate_args.,15min
+12,asyncmy.py,119,python:S1186,CODE_SMELL,"Add a nested comment explaining why this method is empty, or complete the implementation.",5min
+13,asyncmy.py,270,python:S1845,CODE_SMELL,"Rename field ""Binary"" to prevent any misunderstanding/clash with field ""BINARY"" defined on line 267",10min
+14,asyncmy.py,314,python:S2638,CODE_SMELL,Add missing parameters _translate_args.,15min
+15,base.py,218,secrets:S6697,VULNERABILITY,Make sure this MySQL database password gets changed and removed from the code.,30min

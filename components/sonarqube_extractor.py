@@ -1,34 +1,20 @@
-import json
 import logging
 import os
-import time
 from pathlib import Path
-
 import pandas as pd
 import requests
 
 log = logging.getLogger(__name__)
 
-SEVERITY_SCORE = {"BLOCKER": 5, "CRITICAL": 4, "MAJOR": 3, "MINOR": 2, "INFO": 1}
-
-# SonarQube 10.x impact-based severity system (replaces legacy BLOCKER/CRITICAL/... ordering)
-IMPACT_SEVERITY_SCORE = {"BLOCKER": 5, "HIGH": 4, "MEDIUM": 3, "LOW": 2, "INFO": 1}
-QUALITY_PRIORITY = {"SECURITY": 3, "RELIABILITY": 2, "MAINTAINABILITY": 1}
-
 # SonarQube's component_tree endpoint rejects requests with more than ~15 metric keys.
-# Split into three named groups, each fetched independently so one failing group
-# (e.g. legacy violation counts removed in SonarQube 10.x) does not block the others.
+# Split into named groups, each fetched independently so one failing group does not
+# block the others.
 MEASURE_KEYS_CORE = (
     "bugs,vulnerabilities,code_smells,violations,"
-    "complexity,cognitive_complexity,functions,duplicated_lines_density,sqale_index,sqale_debt_ratio"
-)
-# blocker_violations etc. were deprecated in SonarQube 10.x — fetched separately so
-# failure here does not prevent complexity/coverage from being collected.
-MEASURE_KEYS_VIOLATIONS = (
-    "blocker_violations,critical_violations,major_violations,minor_violations,info_violations"
+    "complexity,cognitive_complexity,sqale_index"
 )
 MEASURE_KEYS_RATINGS = (
-    "coverage,lines,reliability_rating,security_rating,sqale_rating"
+    "lines,reliability_rating,security_rating"
 )
 
 RATING_MAP = {"1": "A", "2": "B", "3": "C", "4": "D", "5": "E"}
@@ -42,15 +28,6 @@ class SonarQubeExtractor:
         self.host = sq.get("host", "http://localhost:9000").rstrip("/")
         self.project_key = sq.get("project_key", "")
         self.token = sq.get("token") or os.getenv("SONAR_TOKEN", "")
-        # Thesis design requires all severity tiers; no filtering allowed
-        if sq.get("severities"):
-            raise ValueError(
-                "severities filter must not be set — thesis design requires all severity tiers "
-                "to be extracted and ranked by impact, not pre-filtered by BLOCKER/CRITICAL/MAJOR labels"
-            )
-        tp = config.get("time_period", {})
-        self.start_date = tp.get("start_date") or ""   # empty → no lower bound
-        self.end_date = tp.get("end_date") or ""       # empty → no upper bound
 
     def _auth(self):
         return (self.token, "")
@@ -69,41 +46,18 @@ class SonarQubeExtractor:
     def _extract_file_name(self, component: str) -> str:
         return self._extract_file_path(component).split("/")[-1]
 
-    def _parse_impacts(self, impacts: list) -> tuple[str, str]:
-        """Return (impact_severity, impact_quality) for the highest-priority impact entry."""
-        if not impacts:
-            return ("", "")
-        best = max(
-            impacts,
-            key=lambda x: (
-                IMPACT_SEVERITY_SCORE.get(x.get("severity", "").upper(), 0),
-                QUALITY_PRIORITY.get(x.get("softwareQuality", "").upper(), 0),
-            ),
-        )
-        return (best.get("severity", "").upper(), best.get("softwareQuality", "").upper())
-
     def _parse_issue(self, issue: dict) -> dict:
-        component = issue.get("component", "")
-        severity = issue.get("severity", "MAJOR")
-        impact_severity, impact_quality = self._parse_impacts(issue.get("impacts", []))
         return {
             "issue_key": issue.get("key", ""),
-            "component": component,
-            "file_path": self._extract_file_path(component),
-            "file": self._extract_file_name(component),
+            "file_path": self._extract_file_path(issue.get("component", "")),
+            "file": self._extract_file_name(issue.get("component", "")),
             "rule": issue.get("rule", ""),
-            "severity": severity,
-            "severity_score": SEVERITY_SCORE.get(severity, 3),
-            "impact_severity": impact_severity,
-            "impact_quality": impact_quality,
+            "impact_severity": str(issue.get("impacts", [{}])[0].get("severity", "")).upper() if issue.get("impacts") else "",
+            "impact_quality": str(issue.get("impacts", [{}])[0].get("softwareQuality", "")).upper() if issue.get("impacts") else "",
             "type": issue.get("type", ""),
             "message": issue.get("message", ""),
             "line": issue.get("line"),
-            "status": issue.get("status", ""),
             "effort": issue.get("effort", ""),
-            "debt": issue.get("debt", ""),
-            "tags": ",".join(issue.get("tags", [])),
-            "creationDate": issue.get("creationDate", ""),
         }
 
     def _fetch_issues_page(self, base_params: dict) -> list[dict]:
@@ -129,35 +83,28 @@ class SonarQubeExtractor:
         return issues
 
     def fetch_issues(self) -> pd.DataFrame:
-        # Build date-scoped query params.
-        # createdBefore=end_date  → snapshot: only issues first detected by end of period
-        # createdAfter=start_date → additionally excludes pre-existing issues (use for
-        #                           proprietary repos where only a time slice is accessible)
-        # Omitting either bound means no restriction on that side (full history).
+        """
+        Fetch all open issues from SonarQube in 10.x impact-severity order:
+        HIGH → MEDIUM → LOW.
+
+        SonarQube 10.x's UI orders alerts by impact_severity when developers use the
+        severity filter. To replicate that view, the extractor calls
+        /api/issues/search three times — once per impactSeverities tier — and
+        concatenates results in HIGH, MEDIUM, LOW order. Within each tier the API's
+        default ordering applies (no explicit s= parameter), matching what a developer
+        scrolling the UI would see.
+
+        Each tier is its own slice for the 10,000-result-per-filter cap, so a tier
+        with fewer than 10k alerts needs no further splitting. Tiers that exceed the
+        cap fall back to splitting by type, then by individual rule.
+        """
         base_params: dict = {
             "componentKeys": self.project_key,
             "statuses": "OPEN,CONFIRMED,REOPENED",
-            # Fetch in SonarQube's native severity order so ranking_c1.csv exactly replicates
-            # the API response order: BLOCKER → CRITICAL → MAJOR → MINOR → INFO.
-            # Within the same severity, SonarQube's own secondary sort (creation date ASC) applies.
-            "s": "SEVERITY",
-            "asc": "false",
         }
-        if self.end_date:
-            base_params["createdBefore"] = self.end_date
-        if self.start_date:
-            base_params["createdAfter"] = self.start_date
 
-        window_desc = f"{self.start_date or '(any)'} → {self.end_date or '(any)'}"
-        log.info(f"Fetching issues from SonarQube (window: {window_desc})...")
+        log.info("Fetching all open issues from SonarQube in severity order...")
 
-        # Probe total without fetching all pages
-        probe = self._get("/api/issues/search", {**base_params, "ps": 1, "p": 1})
-        total = probe.get("total", 0)
-        log.info(f"Total issues in SonarQube: {total}")
-
-        # SonarQube caps pagination at 10,000 results per filter (p * ps ≤ 10,000).
-        # When total exceeds the cap, split by severity to keep each slice under 10,000.
         SONAR_PAGE_CAP = 10_000
         seen_keys: set[str] = set()
         all_issues: list[dict] = []
@@ -193,45 +140,38 @@ class SonarQubeExtractor:
                 if rule_total > 0:
                     _collect(rule_params, f"{label} rule={rule} ({rule_total})")
 
-        if total <= SONAR_PAGE_CAP:
-            _collect(base_params, "all severities")
-        else:
-            # Split by severity, then by type, then by rule if still needed.
-            for sev in ("BLOCKER", "CRITICAL", "MAJOR", "MINOR", "INFO"):
-                sev_params = {**base_params, "severities": sev}
-                sev_probe = self._get("/api/issues/search", {**sev_params, "ps": 1, "p": 1})
-                sev_total = sev_probe.get("total", 0)
-                if sev_total == 0:
+        # Tier order matters: HIGH → MEDIUM → LOW reflects SonarQube 10.x UI ordering.
+        # Concatenating in this order is what gives ranking_c1.csv the right sequence;
+        # build_c1_ranking() just numbers rows 1..N without re-sorting.
+        for impact_tier in ("HIGH", "MEDIUM", "LOW"):
+            tier_params = {**base_params, "impactSeverities": impact_tier}
+            probe = self._get("/api/issues/search", {**tier_params, "ps": 1, "p": 1})
+            tier_total = probe.get("total", 0)
+            log.info(f"Tier impactSeverities={impact_tier}: {tier_total} issues")
+            if tier_total == 0:
+                continue
+            if tier_total <= SONAR_PAGE_CAP:
+                _collect(tier_params, f"impactSeverities={impact_tier} ({tier_total})")
+                continue
+            # Tier exceeds the per-filter cap → fall back to type, then rule splitting.
+            log.warning(f"  Tier {impact_tier} has {tier_total} issues (>10k) — splitting by type")
+            for typ in ("BUG", "VULNERABILITY", "CODE_SMELL"):
+                typ_params = {**tier_params, "types": typ}
+                typ_probe = self._get("/api/issues/search", {**typ_params, "ps": 1, "p": 1})
+                typ_total = typ_probe.get("total", 0)
+                if typ_total == 0:
                     continue
-                if sev_total <= SONAR_PAGE_CAP:
-                    _collect(sev_params, f"severity={sev} ({sev_total})")
-                else:
-                    log.warning(f"  severity={sev} has {sev_total} issues (>10k) — splitting by type")
-                    for typ in ("BUG", "VULNERABILITY", "CODE_SMELL"):
-                        typ_params = {**sev_params, "types": typ}
-                        typ_probe = self._get("/api/issues/search", {**typ_params, "ps": 1, "p": 1})
-                        typ_total = typ_probe.get("total", 0)
-                        if typ_total == 0:
-                            continue
-                        _collect_or_split_by_rules(typ_params, f"severity={sev} type={typ}", typ_total)
+                _collect_or_split_by_rules(typ_params, f"impactSeverities={impact_tier} type={typ}", typ_total)
 
         if not all_issues:
-            hint = ""
-            if self.start_date or self.end_date:
-                hint = (
-                    f" NOTE: date filter active ({window_desc}). "
-                    "SonarQube creationDate reflects when the analysis was run, not when "
-                    "the code was written. If your SonarQube instance was set up recently, "
-                    "set start_date: null in your project YAML to fetch all issues."
-                )
-            log.warning(f"No issues returned from SonarQube.{hint}")
+            log.warning("No issues returned from SonarQube.")
 
         # Always return a DataFrame with the expected schema so downstream steps
         # receive a typed, predictable structure even when the result set is empty.
         df = pd.DataFrame(all_issues) if all_issues else pd.DataFrame(columns=[
-            "issue_key", "component", "file_path", "file", "rule",
-            "severity", "severity_score", "impact_severity", "impact_quality",
-            "type", "message", "line", "status", "effort", "debt", "tags", "creationDate",
+            "issue_key", "file_path", "file", "rule",
+            "impact_severity", "impact_quality",
+            "type", "message", "line", "effort",
         ])
         log.info(f"Total issues fetched: {len(df)}")
         return df
@@ -256,7 +196,7 @@ class SonarQubeExtractor:
                 for m in comp.get("measures", []):
                     key = m["metric"]
                     val = m.get("value", "0") or "0"
-                    if key in ("reliability_rating", "security_rating", "sqale_rating"):
+                    if key in ("reliability_rating", "security_rating"):
                         # SonarQube returns "1.0" but RATING_MAP keys are "1"
                         int_val = str(int(float(val))) if val.replace(".", "").isdigit() else val
                         row[key] = RATING_MAP.get(int_val, int_val)
@@ -280,7 +220,6 @@ class SonarQubeExtractor:
 
         for keys, label in [
             (MEASURE_KEYS_CORE, "core"),
-            (MEASURE_KEYS_VIOLATIONS, "violation-counts"),
             (MEASURE_KEYS_RATINGS, "ratings"),
         ]:
             try:
@@ -293,109 +232,12 @@ class SonarQubeExtractor:
         df = pd.DataFrame(list(merged.values()))
         if df.empty:
             return df
-        rating_cols = {"reliability_rating", "security_rating", "sqale_rating"}
+        rating_cols = {"reliability_rating", "security_rating"}
         for col in df.columns:
             if col not in {"file_path"} | rating_cols:
                 df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
         log.info(f"Total files with measures: {len(df)}")
         return df
-
-    def build_c1_ranking(self, issues: pd.DataFrame) -> pd.DataFrame:
-        # Issues are already fetched with s=SEVERITY&asc=false so they arrive in exactly
-        # the order SonarQube shows them. Just assign sequential rank numbers — do not
-        # re-sort, which would deviate from SonarQube's own ordering.
-        df = issues.copy().reset_index(drop=True)
-        df["c1_rank"] = df.index + 1
-        return df
-
-    def fetch_rule_descriptions(self, issues: pd.DataFrame) -> dict:
-        """
-        Fetch SonarQube rule metadata for each unique rule key, for interview UI display.
-        
-        Scientific justification: Interview participants must see the same rule explanation
-        they would see in SonarQube to validate whether an alert represents a real problem.
-        Rule descriptions are identical across C1, C2, C3 (they come from SonarQube's
-        rule database, not from ranking), so their presence does not contaminate the
-        comparison between conditions. Fetching is done once per unique rule key, not once
-        per alert, to minimize API calls.
-        
-        Args:
-            issues: DataFrame with 'rule' column containing rule keys
-            
-        Returns:
-            Dictionary keyed by rule key with structure:
-            {
-                "rule_key": str,
-                "rule_name": str,
-                "rule_description": str,  # HTML or Markdown
-                "rule_type": str,
-                "rule_tags": list[str],
-                "default_impacts": list[dict]  # [{"softwareQuality": str, "severity": str}]
-            }
-        """
-        unique_rules = issues["rule"].unique()
-        log.info(f"Fetching descriptions for {len(unique_rules)} unique rule keys...")
-        
-        descriptions = {}
-        failed = 0
-        
-        for rule_key in unique_rules:
-            try:
-                resp = requests.get(
-                    f"{self.host}/api/rules/show",
-                    params={"key": rule_key},
-                    auth=self._auth(),
-                    timeout=30
-                )
-                if resp.status_code == 404:
-                    log.warning(f"Rule not found: {rule_key}")
-                    failed += 1
-                    continue
-                    
-                resp.raise_for_status()
-                data = resp.json()
-                rule = data.get("rule", {})
-                
-                descriptions[rule_key] = {
-                    "rule_key": rule.get("key", rule_key),
-                    "rule_name": rule.get("name", ""),
-                    "rule_description": rule.get("htmlDesc") or rule.get("mdDesc", ""),
-                    "rule_type": rule.get("type", ""),
-                    "rule_tags": rule.get("tags", []),
-                    "default_impacts": rule.get("defaultImpacts", []),
-                }
-            except requests.exceptions.Timeout:
-                log.warning(f"Timeout fetching rule {rule_key}, retrying once...")
-                try:
-                    time.sleep(2)
-                    resp = requests.get(
-                        f"{self.host}/api/rules/show",
-                        params={"key": rule_key},
-                        auth=self._auth(),
-                        timeout=30
-                    )
-                    if resp.status_code == 404:
-                        failed += 1
-                    else:
-                        resp.raise_for_status()
-                        data = resp.json()
-                        rule = data.get("rule", {})
-                        descriptions[rule_key] = {
-                            "rule_key": rule.get("key", rule_key),
-                            "rule_name": rule.get("name", ""),
-                            "rule_description": rule.get("htmlDesc") or rule.get("mdDesc", ""),
-                            "rule_type": rule.get("type", ""),
-                            "rule_tags": rule.get("tags", []),
-                            "default_impacts": rule.get("defaultImpacts", []),
-                        }
-                except Exception:
-                    failed += 1
-            except Exception as e:
-                log.warning(f"Error fetching rule {rule_key}: {e}")
-                failed += 1
-        
-        log.info(f"Rule descriptions fetched: {len(descriptions)} success, {failed} failed")
-        return descriptions
 
     def run(self) -> None:
         issues = self.fetch_issues()
@@ -408,21 +250,3 @@ class SonarQubeExtractor:
             log.info(f"sonarqube_measures.csv written: {len(measures)} rows")
         except Exception as e:
             log.error(f"Measures fetch failed: {e} — continuing without file-level metrics")
-
-        # C1 ranking is built from issues alone; always written even if measures failed
-        ranking_c1 = self.build_c1_ranking(issues)
-        ranking_c1.to_csv(self.results_path / "ranking_c1.csv", index=False)
-        log.info(f"ranking_c1.csv written: {len(ranking_c1)} rows")
-
-        # Rule descriptions fetched for interview UI — one request per unique rule key,
-        # cached to rule_descriptions.json. Descriptions are identical across conditions
-        # and do not affect rankings; they are fetched for ecological validity (developers
-        # see rule explanations when investigating alerts in SonarQube).
-        try:
-            descriptions = self.fetch_rule_descriptions(issues)
-            desc_path = self.results_path / "rule_descriptions.json"
-            with open(desc_path, "w") as f:
-                json.dump(descriptions, f, indent=2)
-            log.info(f"rule_descriptions.json written: {len(descriptions)} rules")
-        except Exception as e:
-            log.error(f"Rule descriptions fetch failed: {e} — continuing without UI descriptions")

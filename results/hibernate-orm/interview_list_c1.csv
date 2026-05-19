@@ -1,0 +1,16 @@
+rank,file,line,rule,type,message,effort
+1,C3P0ConnectionProvider.java,71.0,java:S2095,BUG,"Use try-with-resources or close this ""Connection"" in a ""finally"" clause.",5min
+2,AltibaseDialect.java,342.0,java:S3776,CODE_SMELL,Refactor this method to reduce its Cognitive Complexity from 17 to the 15 allowed.,7min
+3,CockroachLegacyDialect.java,205.0,java:S1192,CODE_SMELL,"Define a constant instead of duplicating this literal ""string"" 3 times.",8min
+4,CockroachLegacyDialect.java,226.0,java:S131,CODE_SMELL,Add a default case to this switch.,5min
+5,CockroachLegacyDialect.java,269.0,java:S131,CODE_SMELL,Add a default case to this switch.,5min
+6,CockroachLegacyDialect.java,271.0,java:S131,CODE_SMELL,Add a default case to this switch.,5min
+7,CockroachLegacyDialect.java,322.0,java:S131,CODE_SMELL,Add a default case to this switch.,5min
+8,CommunityDialectSelector.java,22.0,java:S131,CODE_SMELL,Add a default case to this switch.,5min
+9,DB2LegacyDialect.java,564.0,java:S1192,CODE_SMELL,"Define a constant instead of duplicating this literal ""date '"" 3 times.",8min
+10,DB2LegacyDialect.java,569.0,java:S1192,CODE_SMELL,"Define a constant instead of duplicating this literal ""time '"" 3 times.",8min
+11,DB2LegacyDialect.java,574.0,java:S1192,CODE_SMELL,"Define a constant instead of duplicating this literal ""timestamp '"" 3 times.",8min
+12,DB2LegacySqlAstTranslator.java,388.0,java:S1192,CODE_SMELL,"Define a constant instead of duplicating this literal ""xmlserialize("" 8 times.",18min
+13,HSQLLegacyDialect.java,384.0,java:S128,CODE_SMELL,"End this switch case with an unconditional break, return or throw statement.",10min
+14,MySQLLegacySqlAstTranslator.java,147.0,java:S3776,CODE_SMELL,Refactor this method to reduce its Cognitive Complexity from 16 to the 15 allowed.,6min
+15,OracleLegacyDialect.java,169.0,java:S115,CODE_SMELL,Rename this constant name to match the regular expression '^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$'.,2min

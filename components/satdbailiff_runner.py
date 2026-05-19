@@ -17,7 +17,7 @@ Pipeline
 3. Write repos.csv  (GitHub URL, terminal commit) and db.properties for SATDBailiff
 4. Run SATDBailiff JAR — clones repo via JGit, walks history, writes lifecycle to MySQL
 5. Query active SATD (SATD_ADDED with no subsequent SATD_REMOVED/FILE_REMOVED) per file path
-6. Map to schema: file_path, satd_count, satd_text, satd_types, satd_age_days, satd_change_count
+6. Map to schema: file_path, satd_count, satd_text, satd_age_days, satd_change_count
 7. Remove MySQL container regardless of outcome
 
 Requirements
@@ -78,13 +78,6 @@ class SATDBailiffRunner:
         self.github_token = os.getenv("GITHUB_TOKEN", "")
         self.github_user = os.getenv("GITHUB_USER", "")
         self.mysql_port = int(os.getenv("SATD_MYSQL_PORT", "3307"))
-        tp = config.get("time_period", {})
-        # self.end_date is used only for satd_age_days computation in _query_results().
-        # It is NOT a filter on SATD extraction — SATDBailiff always mines full history.
-        # This is a display/age field only (thesis design decision: extract at HEAD).
-        self.end_date = tp.get("end_date", "")
-        if self.end_date:
-            log.info(f"satd_age_days will be computed relative to end_date={self.end_date} (age computation only — not a filter on SATD extraction)")
         # Sanitise project_id so it's safe in a Docker container name
         project_id = str(config.get("project_id", "project")).replace("/", "-").replace("_", "-")
         self.container_name = f"satdbailiff-mysql-{project_id}"
@@ -164,6 +157,38 @@ class SATDBailiffRunner:
             log.error(f"docker pull {_MYSQL_IMAGE} failed")
             return False
         return True
+
+    def _existing_container_has_data(self) -> bool:
+        """
+        True if our named container is running AND its Projects table already has
+        a row for this repo. Lets us recover from interrupted previous runs
+        without destroying their data.
+        """
+        chk = subprocess.run(
+            ["docker", "inspect", "-f", "{{.State.Running}}", self.container_name],
+            capture_output=True, text=True,
+        )
+        if chk.returncode != 0 or chk.stdout.strip() != "true":
+            return False
+        try:
+            import mysql.connector
+            cnx = mysql.connector.connect(
+                host="127.0.0.1", port=self.mysql_port,
+                user=_MYSQL_USER, password=_MYSQL_PASS, database=_MYSQL_DB,
+                connect_timeout=5,
+            )
+            cur = cnx.cursor()
+            repo_url = f"https://github.com/{self.repo_owner}/{self.repo_name}"
+            cur.execute(
+                "SELECT COUNT(*) FROM Projects WHERE p_url = %s OR p_url LIKE %s",
+                (repo_url, f"%{self.repo_owner}/{self.repo_name}%"),
+            )
+            n = cur.fetchone()[0]
+            cur.close()
+            cnx.close()
+            return n > 0
+        except Exception:
+            return False
 
     def _start_mysql(self) -> bool:
         if not self._ensure_mysql_image():
@@ -621,8 +646,8 @@ class SATDBailiffRunner:
         except Exception as e:
             log.debug(f"SATD stats query failed: {e}")
 
-        from datetime import datetime as _dt
-        end_date_str = self.end_date if self.end_date else _dt.utcnow().strftime("%Y-%m-%d")
+        from datetime import datetime as _dt, timezone as _tz
+        end_date_str = _dt.now(_tz.utc).strftime("%Y-%m-%d")
 
         cur = cnx.cursor(dictionary=True)
         # Active SATD query: Uses SATD_ADDED resolution with NOT EXISTS subquery
@@ -651,10 +676,6 @@ class SATDBailiffRunner:
                     ORDER BY sif.f_id
                     SEPARATOR ' | '
                 )                                                          AS satd_text,
-                GROUP_CONCAT(
-                    DISTINCT COALESCE(sif.type, 'UNKNOWN')
-                    SEPARATOR ','
-                )                                                          AS satd_types,
                 MAX(DATEDIFF(%s, COALESCE(c_add.commit_date, c_add.author_date)))
                                                                            AS satd_age_days,
                 COALESCE(SUM(chg.change_count), 0)                         AS satd_change_count
@@ -709,13 +730,13 @@ class SATDBailiffRunner:
             f"{df['satd_change_count'].sum()} total changes)"
         )
         return df[
-            ["file_path", "satd_count", "satd_text", "satd_types",
+            ["file_path", "satd_count", "satd_text",
              "satd_age_days", "satd_change_count"]
         ]
 
     def _empty_df(self) -> pd.DataFrame:
         return pd.DataFrame(
-            columns=["file_path", "satd_count", "satd_text", "satd_types",
+            columns=["file_path", "satd_count", "satd_text",
                      "satd_age_days", "satd_change_count"]
         )
 
@@ -749,6 +770,25 @@ class SATDBailiffRunner:
             log.warning("SATDBailiff: repo_owner or repo_name not configured — skipping")
             return None
 
+        # Reuse-existing-container guard: if a previous run was interrupted and
+        # left a container with data for this repo, query it instead of destroying
+        # the data with a fresh JAR walk. Set SATDBAILIFF_FORCE_RERUN=1 to force
+        # a clean re-extraction.
+        force_rerun = os.getenv("SATDBAILIFF_FORCE_RERUN", "").lower() in ("1", "true", "yes")
+        if not force_rerun and self._existing_container_has_data():
+            log.info(
+                f"Reusing existing MySQL container '{self.container_name}' — "
+                "Projects row already present. "
+                "Set SATDBAILIFF_FORCE_RERUN=1 to force a fresh JAR walk."
+            )
+            try:
+                return self._query_results()
+            except Exception as e:
+                log.warning(
+                    f"Query against existing container failed ({e}) — "
+                    "proceeding with a fresh JAR run"
+                )
+
         jar = self._find_or_download_jar()
         if jar is None:
             return None
@@ -775,3 +815,5 @@ class SATDBailiffRunner:
             return None
         finally:
             self._stop_mysql()
+            (self.results_path / "satdbailiff_repos.csv").unlink(missing_ok=True)
+            (self.results_path / "satdbailiff_db.properties").unlink(missing_ok=True)

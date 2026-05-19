@@ -1,0 +1,19 @@
+Run summary: sqlalchemy
+Timestamp:   2026-05-19 20:15:25 UTC
+Duration:    145.0s
+Time window: (none) → (none)
+
+Component results:
+  sonarqube            SKIPPED
+  github               SKIPPED
+  satd                 SKIPPED
+  enrich               OK
+  pool                 OK (50 alerts)
+  llm                  OK
+  display_set          OK
+
+Issues extracted: 1603
+Enriched issues: 1603
+ranking_c1.csv: 50 issues ranked
+ranking_c2.csv: 50 issues ranked
+ranking_c3.csv: 50 issues ranked

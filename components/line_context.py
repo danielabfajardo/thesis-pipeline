@@ -1,35 +1,19 @@
 """
-Fetches source code context for interview UI display.
+Optional helper for fetching source-code context around an alert.
 
-Scientific justification: Interview participants must see flagged code lines and
-surrounding context to validate whether an alert represents a real problem — this
-is how developers actually investigate alerts in SonarQube. Code context is essential
-for making actionable judgments about alert validity (Christakis & Bird 2016;
-Vassallo et al. 2018). A context window of ±5 lines is standard for code review
-interfaces and sufficient to understand the flagged construct without overwhelming
-the display.
+The main interview stimuli do not show code snippets by default. Participants compare
+ranked alert lists using neutral alert metadata only (rank, file, line, rule, type,
+message, effort). This helper is provided for optional backup context — it can fetch
+surrounding code for selected alerts only if a participant cannot reason about an alert
+without seeing the source.
 
-The interview UI must replicate SonarQube's code viewer to have ecological validity.
-Hiding code context would make the task artificial and disconnect it from real practice,
-undermining the validity of the study.
-
-Line context is fetched from GitHub at HEAD (current state) since that is what a
-developer would see when investigating an alert today. Context is cached per session
-to minimize API calls for files that appear in multiple alerts.
-
-Design decisions:
-- Per-session caching: files are fetched once per session, keyed by file_path
-- ±5 context lines: standard for code review UIs, sufficient for understanding context
-- No CSV output: returns data structures only for UI consumption (on-demand fetching)
-- Rate limit aware: respects GitHub API rate limit headers, sleeps until reset if needed
-- Graceful degradation: if fetch fails, returns dict with empty lines and error message
+Code context is NOT part of the main interview protocol.
 """
 
 import base64
 import logging
 import os
 import time
-from pathlib import Path
 
 import requests
 

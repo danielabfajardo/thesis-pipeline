@@ -295,9 +295,24 @@
     });
   }
 
+  // ---- Latin Square selector ----
+  // Changing the dropdown navigates to ?order=XXX. Server re-renders with the new
+  // condition→list mapping; rankings data is reloaded under the new rotation.
+  function initLatinSquare() {
+    const sel = document.getElementById("latin-square-select");
+    if (!sel) return;
+    sel.addEventListener("change", function () {
+      const order = this.value;
+      const url = new URL(window.location.href);
+      url.searchParams.set("order", order);
+      window.location.href = url.toString();
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     initTabs();
     initFilters();
+    initLatinSquare();
     if (projectId) loadData();
   });
 })();

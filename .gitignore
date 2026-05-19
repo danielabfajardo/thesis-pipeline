@@ -13,7 +13,7 @@ dist/
 build/
 
 # Pipeline outputs (reproducible, not source)
-results/
+# results/
 
 # SATDBailiff runtime files (generated per run)
 projects/repos_*.txt

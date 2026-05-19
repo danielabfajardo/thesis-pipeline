@@ -7,24 +7,20 @@ Output: results/{project_id}/satd_comments.csv
 
 Detection strategy (tried in order):
 1. SATDBailiff (Docker + JGit + MySQL) — Java repositories only. Mines full git history
-   with lifecycle tracking (additions, removals, modifications). Requires Java 11+, Docker,
-   and mysql-connector-python. The SATDBailiff JAR is downloaded automatically on first run.
-   Produces schema: file_path, satd_count, satd_text, satd_types, satd_age_days, satd_change_count.
+   with lifecycle tracking. Produces schema: file_path, satd_count, satd_text, satd_age_days,
+   satd_change_count. For LLM ranking, only satd_count and satd_text are used.
 
-2. satd_detector.jar ML classifier — Binary SATD presence classifier. Fetches file contents
-   via GitHub API and batches all comments through the ML model. Requires Java and the
-   satd_detector.jar in tools/. Produces schema: file_path, satd_count, satd_text.
+2. satd_detector.jar ML classifier — Python-compatible SATD presence classifier. Fetches file
+   contents via GitHub API and batches all comments through the ML model. Produces schema:
+   file_path, satd_count, satd_text. For LLM ranking, satd_count and satd_text are used.
 
-3. Empty CSV — If neither SATDBailiff nor the ML classifier is available, returns an empty
-   results file that downstream stages handle gracefully.
+3. Empty CSV — If neither extractor is available, returns an empty results file.
 
 Design decisions:
-- ML classifier reads comments line-by-line via stdin and emits classification labels
-  via stdout, batched across all files for efficiency.
-- SATDBailiff output (satd_types field) is passed as-is without re-classification.
-  ML classifier output does not include type information (binary classifier).
-- SATD is extracted at HEAD (current repository state), not scoped to a time_period
-  timestamp. age-related metrics are computed relative to an optional end_date.
+- Only satd_count and satd_text are passed to C3 LLM input to maintain symmetry across
+  Java and Python repositories. SATD lifecycle fields (age, change count) are not used.
+- SATD is extracted at HEAD (current repository state).
+- ML classifier reads comments line-by-line via stdin, batched across files for efficiency.
 """
 
 import base64
@@ -89,11 +85,6 @@ class SATDExtractor:
                 s.headers["Authorization"] = f"token {self.github_token}"
             self._session = s
         return self._session
-
-    def _resolve_end_date_commit(self) -> str:
-        """Always return HEAD. SATD extracted at the current repository state (thesis design decision)."""
-        log.info("SATD extracted at HEAD (current repository state) — thesis design decision")
-        return "HEAD"
 
     def _fetch_file_content(self, file_path: str, ref: str) -> str | None:
         session = self._github_session()
@@ -170,7 +161,8 @@ class SATDExtractor:
             log.warning("No comments found in any file — skipping ML classifier")
             return self._empty_df()
 
-        log.info(f"ML classifier: running on {len(all_comments)} comments...")
+        ml_timeout = int(os.getenv("SATD_ML_TIMEOUT", "1800"))
+        log.info(f"ML classifier: running on {len(all_comments)} comments (timeout={ml_timeout}s)...")
         stdin_text = "\n".join(c for _, c in all_comments) + "\n"
 
         try:
@@ -179,15 +171,15 @@ class SATDExtractor:
                 input=stdin_text,
                 capture_output=True,
                 text=True,
-                timeout=300,
+                timeout=ml_timeout,
             )
             # Exit code is always 1 (NullPointerException on EOF) — ignore it, use stdout.
             # Classifier may emit one extra classification for the trailing newline in stdin;
             # take exactly as many outputs as there are inputs.
-            all_output = [l.strip() for l in result.stdout.splitlines() if l.strip()]
+            all_output = [line.strip() for line in result.stdout.splitlines() if line.strip()]
             output_lines = all_output[:len(all_comments)]
         except subprocess.TimeoutExpired:
-            log.warning("ML classifier timed out after 300s")
+            log.warning(f"ML classifier timed out after {ml_timeout}s — set SATD_ML_TIMEOUT to a higher value")
             return None
         except Exception as e:
             log.warning(f"ML classifier failed: {e}")
@@ -248,11 +240,11 @@ class SATDExtractor:
         
         # Verify output schema matches expected set for the detected method
         # ML classifier path: file_path, satd_count, satd_text (3 columns)
-        # SATDBailiff path: file_path, satd_count, satd_text, satd_types, satd_age_days, satd_change_count (6 columns)
+        # SATDBailiff path: file_path, satd_count, satd_text, satd_age_days, satd_change_count (5 columns)
         if "satd_age_days" in df.columns:
             # SATDBailiff path (Java)
             expected_columns = {
-                "file_path", "satd_count", "satd_text", "satd_types",
+                "file_path", "satd_count", "satd_text",
                 "satd_age_days", "satd_change_count",
             }
         else:
@@ -277,7 +269,7 @@ class SATDExtractor:
 
     def run(self) -> str:
         """Run SATD extraction. Returns the method name that was used."""
-        commit_ref = self._resolve_end_date_commit()
+        commit_ref = "HEAD"
         file_paths = self._get_file_paths()
 
         # --- Path 1: SATDBailiff (Docker + JAR) — Java only ---
@@ -315,11 +307,7 @@ class SATDExtractor:
         if self._find_classifier_jar() and shutil.which("java") and file_paths and self.github_token:
             df = self._run_ml_classifier(file_paths, commit_ref)
             if df is not None and not df.empty:
-                # Log output schema for verification
-                log.info(f"ML classifier output columns: {list(df.columns)}")
-                # NOTE: ML classifier schema (3 cols: file_path, satd_count, satd_text) differs from SATDBailiff schema (6 cols: adds satd_types, satd_age_days, satd_change_count).
-                # satd_age_days and satd_change_count are only present for Java repos (SATDBailiff path)
-                # and will be absent for Python repos. Stage 3 enrichment must handle via LEFT JOIN with null fill.
+                # SATDBailiff (Java): 5 columns including lifecycle fields. ML classifier (Python): 3 columns, no lifecycle fields. Asymmetry documented as limitation.
                 return self._save(df, f"satd-detector-jar-ml ({len(df)} files with SATD)")
             elif df is not None:
                 log.info(f"ML classifier output columns: {list(df.columns)}")
@@ -328,5 +316,4 @@ class SATDExtractor:
         # --- Path 3: Empty ---
         log.warning("No ML classifier available — SATD will be empty for this repo. Verify satd_detector.jar is in tools/")
         empty_df = self._empty_df()
-        log.info(f"Empty SATD output columns: {list(empty_df.columns)}")
         return self._save(empty_df, "empty (no method available)")

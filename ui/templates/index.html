@@ -2,13 +2,29 @@
 {% block title %}Select Project{% endblock %}
 {% block content %}
 <div class="project-selector">
-  <h2>Select a project</h2>
-  <ul class="project-list">
-    {% for pid in projects %}
-    <li>
-      <a href="{{ url_for('issues', project_id=pid) }}" class="project-link">{{ pid }}</a>
-    </li>
-    {% endfor %}
-  </ul>
+  <h2>Projects</h2>
+  <table class="projects-table">
+    <thead>
+      <tr>
+        <th>Project</th>
+        <th>Interview view</th>
+        <th>Researcher view</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pid in projects %}
+      <tr>
+        <td class="proj-name">{{ pid }}</td>
+        <td><a href="{{ url_for('issues', project_id=pid) }}" class="project-link">Open interview UI</a></td>
+        <td><a href="{{ url_for('researcher', project_id=pid) }}" class="project-link researcher">Open researcher UI</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="index-help">
+    <p><strong>Interview view</strong> presents three lists (List 1, List 2, List 3) with no AI/LLM/condition labels. Latin Square ordering can be selected per session via the dropdown on that page.</p>
+    <p><strong>Researcher view</strong> exposes every pipeline stage: SonarQube extraction, GitHub churn, SATD detection, pool construction, LLM prompts and outputs, and a side-by-side C1 vs C2 vs C3 diff. Not visible during interviews.</p>
+  </div>
 </div>
 {% endblock %}

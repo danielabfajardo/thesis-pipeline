@@ -1,14 +1,6 @@
 project_id: "hibernate-orm"
 project_display_name: "Hibernate ORM"
-
-# Scanned from hibernate/hibernate-orm 6.4.4 (Jan 2024).
-# SonarQube analysis run May 2026 — creationDate reflects analysis date, not code date.
-# Both bounds null: fetch all open issues.
-# 9,491 total issues (BLOCKER:90, CRITICAL:1845, MAJOR:4023, MINOR:1566, INFO:1967).
-# No severity filter needed — total is well under SonarQube's 10k pagination cap.
-time_period:
-  start_date: null
-  end_date: null
+language: java  # SATDBailiff Path 1 (Docker + MySQL + JAR walks full git history)
 
 sonarqube:
   host: "http://localhost:9000"

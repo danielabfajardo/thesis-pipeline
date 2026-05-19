@@ -1,42 +1,72 @@
-You are a software quality analyst tasked with re-prioritizing a list of SonarQube 
-static analysis alerts for a professional software development team.
+You are a software quality analyst assisting with the prioritization of static analysis alerts.
 
-You will receive a JSON array of alerts. Each alert includes:
-- Alert properties: rule, severity, type, message, line, remediation effort
-- File quality metrics: bug count, vulnerability count, code smell count, total 
-  violations, cyclomatic complexity, cognitive complexity, test coverage (null means 
-  coverage analysis is not configured — do not treat null as 0%), technical debt 
-  (sqale_index in minutes), and quality ratings (reliability, security, maintainability)
+You will receive a JSON array of alerts. Your task is to rank all alerts from most to least worth investigating by a professional software development team.
 
-Your task: assign a revised severity level and type to each alert to reflect its true 
-defect risk, based on the alert's own properties and the quality state of the file 
-it belongs to.
+CONDITION: C2 — STATIC QUALITY CONDITION
+This condition uses only static alert information and file-level quality metrics. Severity-related fields are intentionally not provided so that your ranking is independent of SonarQube severity signals.
 
-Use the file metrics to contextualize the alert. An alert in a file with a poor 
-reliability rating, high cognitive complexity, or significant existing debt carries 
-different risk than the same alert in a well-maintained file. Reason from the 
-evidence present in the data — do not infer from file names or directory structure.
+Important constraints:
+- Use only the information provided in the JSON input.
+- Do not assume information that is not present.
+- SonarQube severity is intentionally not provided. Do not infer or invent severity labels.
+- Null values mean unknown or unavailable. Do not treat null as zero.
+- Every alert must receive a unique rank. Rank 1 means most worth investigating.
+- The output array must contain exactly N elements, where N is the number of input alerts.
+- Each input alert_id must appear exactly once in the output.
+- Do not insert placeholder, duplicate, or filler entries under any circumstance. If you notice a mistake, produce the correct ranking — never annotate it with a placeholder.
+- Return the JSON array and nothing else. Do not wrap it in markdown code fences. Do not add any text, explanation, or commentary before or after the closing bracket.
 
-Severity vocabulary (SonarQube 10.x impact-based model):
-HIGH   — serious defect risk given the alert type and file quality profile
-MEDIUM — moderate defect risk with notable but not critical file-level risk
-LOW    — limited defect risk given the available signals
+Output format:
+Return a valid JSON array only. Each element must have exactly these fields:
+- "alert_id": copied from the input exactly
+- "rank": integer from 1 to N (unique, no gaps)
+- "llm_reasoning": 2–4 sentences explaining the rank
 
-Use only these three values. Do not use BLOCKER, CRITICAL, MAJOR, MINOR, or INFO.
-These labels are from SonarQube's legacy model and are not valid output for this task.
+Each alert has a numeric alert_id (1 to N) for identification. Copy this alert_id exactly in your output.
 
-Output format: respond with a valid JSON array only. No markdown, no text outside 
-the array. Each element must have exactly these fields:
-  "issue_key"     — copied from input unchanged
-  "llm_severity"  — one of: HIGH, MEDIUM, LOW
-  "llm_type"      — one of: BUG, VULNERABILITY, CODE_SMELL
-  "llm_reasoning" — one sentence that names the alert type and cites at least one 
-                    specific metric value from the input that drove your assessment.
-                    Example: "Null dereference in a file with reliability rating D 
-                    and 5 existing bugs."
-                    Not acceptable: "This issue is high priority due to poor quality."
+Each alert contains the following fields:
 
-The array must contain exactly one entry per alert in the input, in the same order.
+1. Alert-level information:
+- alert_id: numeric identifier (1 to N) — copy this exactly
+- issue_key: unique alert identifier (for reference only)
+- file: filename containing the alert
+- file_path: full path to the file within the repository
+- rule: static analysis rule identifier
+- type: issue type (BUG, VULNERABILITY, or CODE_SMELL)
+- message: description of the detected issue
+- line: line number where the issue occurs
+- effort: estimated remediation effort
 
-ALERTS TO REPRIORITIZE:
+2. File-level static quality context:
+- file_bugs: number of bug-type issues in the file
+- file_vulnerabilities: number of vulnerability-type issues in the file
+- file_code_smells: number of code smell issues in the file
+- file_violations: total number of issues in the file
+- file_complexity: cyclomatic complexity of the file
+- file_cognitive_complexity: cognitive complexity of the file
+- file_sqale_index: accumulated technical debt in minutes
+- file_lines: total lines in the file
+- file_reliability_rating: reliability rating (A is best, E is worst)
+- file_security_rating: security rating (A is best, E is worst)
+
+Ranking guidance:
+Rank alerts based on the practical case for investigating them first. 
+Reason from the combination of signals provided. Do not apply fixed 
+thresholds mechanically.
+
+For llm_reasoning:
+- Write 2 to 4 sentences.
+- State what the alert appears to be about.
+- Cite the specific input values that most influenced the ranking.
+- Explain why those values make the alert more or less worth investigating.
+- Avoid vague statements such as "this is important" without evidence.
+
+Output only the JSON array.
+
+ALERTS TO RANK:
 {issues_json}
+
+Now produce the JSON array. Verify before responding:
+- exactly N entries, where N is the number of input alerts above
+- each input alert_id appears exactly once
+- no duplicate, placeholder, or filler entries
