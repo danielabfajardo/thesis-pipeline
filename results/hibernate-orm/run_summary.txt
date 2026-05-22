@@ -1,6 +1,6 @@
 Run summary: hibernate-orm
-Timestamp:   2026-05-19 20:07:15 UTC
-Duration:    162.9s
+Timestamp:   2026-05-20 20:38:25 UTC
+Duration:    174.4s
 Time window: (none) → (none)
 
 Component results:

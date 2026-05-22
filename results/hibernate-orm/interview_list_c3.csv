@@ -1,16 +1,16 @@
 rank,file,line,rule,type,message,effort
 1,C3P0ConnectionProvider.java,71.0,java:S2095,BUG,"Use try-with-resources or close this ""Connection"" in a ""finally"" clause.",5min
-2,HSQLLegacyDialect.java,384.0,java:S128,CODE_SMELL,"End this switch case with an unconditional break, return or throw statement.",10min
-3,OracleLegacyDialect.java,525.0,java:S128,CODE_SMELL,"End this switch case with an unconditional break, return or throw statement.",10min
+2,OracleLegacyDialect.java,525.0,java:S128,CODE_SMELL,"End this switch case with an unconditional break, return or throw statement.",10min
+3,HSQLLegacyDialect.java,384.0,java:S128,CODE_SMELL,"End this switch case with an unconditional break, return or throw statement.",10min
 4,FirebirdSqlAstTranslator.java,292.0,java:S1117,CODE_SMELL,"Rename ""inFunction"" which hides the field declared at line 48.",5min
 5,FirebirdSqlAstTranslator.java,305.0,java:S1117,CODE_SMELL,"Rename ""inFunction"" which hides the field declared at line 48.",5min
 6,H2LegacySqlAstTranslator.java,186.0,java:S1117,CODE_SMELL,"Rename ""renderAsArray"" which hides the field declared at line 48.",5min
 7,H2LegacySqlAstTranslator.java,198.0,java:S1117,CODE_SMELL,"Rename ""renderAsArray"" which hides the field declared at line 48.",5min
 8,H2LegacySqlAstTranslator.java,65.0,java:S4274,CODE_SMELL,Replace this assert with a proper check.,5min
 9,OracleLegacyDialect.java,372.0,java:S3776,CODE_SMELL,Refactor this method to reduce its Cognitive Complexity from 21 to the 15 allowed.,11min
-10,C3P0ConnectionProvider.java,156.0,java:S2864,CODE_SMELL,"Iterate over the ""entrySet"" instead of the ""keySet"".",5min
-11,CockroachLegacyDialect.java,226.0,java:S131,CODE_SMELL,Add a default case to this switch.,5min
-12,CockroachLegacyDialect.java,269.0,java:S131,CODE_SMELL,Add a default case to this switch.,5min
-13,CockroachLegacyDialect.java,271.0,java:S131,CODE_SMELL,Add a default case to this switch.,5min
-14,CockroachLegacyDialect.java,322.0,java:S131,CODE_SMELL,Add a default case to this switch.,5min
+10,CockroachLegacyDialect.java,226.0,java:S131,CODE_SMELL,Add a default case to this switch.,5min
+11,CockroachLegacyDialect.java,269.0,java:S131,CODE_SMELL,Add a default case to this switch.,5min
+12,CockroachLegacyDialect.java,271.0,java:S131,CODE_SMELL,Add a default case to this switch.,5min
+13,CockroachLegacyDialect.java,322.0,java:S131,CODE_SMELL,Add a default case to this switch.,5min
+14,C3P0ConnectionProvider.java,156.0,java:S2864,CODE_SMELL,"Iterate over the ""entrySet"" instead of the ""keySet"".",5min
 15,CommunityDatabase.java,237.0,java:S1172,CODE_SMELL,"Remove this unused method parameter ""jdbcUrl"".",5min

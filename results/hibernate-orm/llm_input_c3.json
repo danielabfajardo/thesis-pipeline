@@ -23,8 +23,8 @@
     "file_unique_authors": 1,
     "file_churn": 147,
     "file_days_since_modified": 108,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 2.0,
+    "file_satd_text": "@author various people | as soon as we obtain a new connection. This maybe isn't ideal,"
   },
   {
     "alert_id": 2,
@@ -77,8 +77,8 @@
     "file_unique_authors": 5,
     "file_churn": 301,
     "file_days_since_modified": 33,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 1.0,
+    "file_satd_text": "TODO: RESTRICT VIOLATION"
   },
   {
     "alert_id": 4,
@@ -104,8 +104,8 @@
     "file_unique_authors": 5,
     "file_churn": 301,
     "file_days_since_modified": 33,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 1.0,
+    "file_satd_text": "TODO: RESTRICT VIOLATION"
   },
   {
     "alert_id": 5,
@@ -131,8 +131,8 @@
     "file_unique_authors": 5,
     "file_churn": 301,
     "file_days_since_modified": 33,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 1.0,
+    "file_satd_text": "TODO: RESTRICT VIOLATION"
   },
   {
     "alert_id": 6,
@@ -158,8 +158,8 @@
     "file_unique_authors": 5,
     "file_churn": 301,
     "file_days_since_modified": 33,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 1.0,
+    "file_satd_text": "TODO: RESTRICT VIOLATION"
   },
   {
     "alert_id": 7,
@@ -185,8 +185,8 @@
     "file_unique_authors": 5,
     "file_churn": 301,
     "file_days_since_modified": 33,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 1.0,
+    "file_satd_text": "TODO: RESTRICT VIOLATION"
   },
   {
     "alert_id": 8,
@@ -239,8 +239,8 @@
     "file_unique_authors": 4,
     "file_churn": 380,
     "file_days_since_modified": 153,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 1.0,
+    "file_satd_text": "but perhaps they were in older versions?"
   },
   {
     "alert_id": 10,
@@ -266,8 +266,8 @@
     "file_unique_authors": 4,
     "file_churn": 380,
     "file_days_since_modified": 153,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 1.0,
+    "file_satd_text": "but perhaps they were in older versions?"
   },
   {
     "alert_id": 11,
@@ -293,8 +293,8 @@
     "file_unique_authors": 4,
     "file_churn": 380,
     "file_days_since_modified": 153,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 1.0,
+    "file_satd_text": "but perhaps they were in older versions?"
   },
   {
     "alert_id": 12,
@@ -347,8 +347,8 @@
     "file_unique_authors": 4,
     "file_churn": 181,
     "file_days_since_modified": 107,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 1.0,
+    "file_satd_text": "TODO: does not support MICROSECOND, but on the"
   },
   {
     "alert_id": 14,
@@ -401,8 +401,8 @@
     "file_unique_authors": 6,
     "file_churn": 241,
     "file_days_since_modified": 9,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 5.0,
+    "file_satd_text": "Approximate octet and bit length for clobs since exact size determination would require a custom function | TODO: provide a way to change this without a custom Dialect | also get reported this way, so take care) | Until 12.2 there was a bug in the Oracle query rewriter causing ORA-00918 | when the query contains duplicate implicit aliases in the select clause"
   },
   {
     "alert_id": 16,
@@ -428,8 +428,8 @@
     "file_unique_authors": 6,
     "file_churn": 241,
     "file_days_since_modified": 9,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 5.0,
+    "file_satd_text": "Approximate octet and bit length for clobs since exact size determination would require a custom function | TODO: provide a way to change this without a custom Dialect | also get reported this way, so take care) | Until 12.2 there was a bug in the Oracle query rewriter causing ORA-00918 | when the query contains duplicate implicit aliases in the select clause"
   },
   {
     "alert_id": 17,
@@ -455,8 +455,8 @@
     "file_unique_authors": 6,
     "file_churn": 241,
     "file_days_since_modified": 9,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 5.0,
+    "file_satd_text": "Approximate octet and bit length for clobs since exact size determination would require a custom function | TODO: provide a way to change this without a custom Dialect | also get reported this way, so take care) | Until 12.2 there was a bug in the Oracle query rewriter causing ORA-00918 | when the query contains duplicate implicit aliases in the select clause"
   },
   {
     "alert_id": 18,
@@ -482,8 +482,8 @@
     "file_unique_authors": 1,
     "file_churn": 147,
     "file_days_since_modified": 108,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 2.0,
+    "file_satd_text": "@author various people | as soon as we obtain a new connection. This maybe isn't ideal,"
   },
   {
     "alert_id": 19,
@@ -509,8 +509,8 @@
     "file_unique_authors": 1,
     "file_churn": 29,
     "file_days_since_modified": 313,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 1.0,
+    "file_satd_text": "connect them via union all but that's probably pretty inefficient and would have to happen"
   },
   {
     "alert_id": 20,
@@ -536,8 +536,8 @@
     "file_unique_authors": 3,
     "file_churn": 63,
     "file_days_since_modified": 246,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 3.0,
+    "file_satd_text": "TODO: CUBRID also has systime()/sysdate() returning TIME/DATE | TODO: is this really needed? | TODO: would \"from table({0})\" be better?"
   },
   {
     "alert_id": 21,
@@ -563,8 +563,8 @@
     "file_unique_authors": 3,
     "file_churn": 63,
     "file_days_since_modified": 246,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 3.0,
+    "file_satd_text": "TODO: CUBRID also has systime()/sysdate() returning TIME/DATE | TODO: is this really needed? | TODO: would \"from table({0})\" be better?"
   },
   {
     "alert_id": 22,
@@ -590,8 +590,8 @@
     "file_unique_authors": 3,
     "file_churn": 63,
     "file_days_since_modified": 246,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 3.0,
+    "file_satd_text": "TODO: CUBRID also has systime()/sysdate() returning TIME/DATE | TODO: is this really needed? | TODO: would \"from table({0})\" be better?"
   },
   {
     "alert_id": 23,
@@ -671,8 +671,8 @@
     "file_unique_authors": 4,
     "file_churn": 252,
     "file_days_since_modified": 153,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 6.0,
+    "file_satd_text": "emulate the most basic functionality of extract() | type, but it doesn't know how to cast to it. Worse, | With a nice rant: https://blog.jooq.org/2011/10/29/derby-casting-madness-the-sequel/ | TODO: check this! | TODO: check this | It seems at least the row_number function is supported as of 10.4"
   },
   {
     "alert_id": 26,
@@ -698,8 +698,8 @@
     "file_unique_authors": 4,
     "file_churn": 375,
     "file_days_since_modified": 285,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 2.0,
+    "file_satd_text": "Formally, Firebird has a (fixed) precision of 4 (100 microseconds), | Note: Firebird 3 has an 'off by increment' bug (fixed in Firebird 4), see"
   },
   {
     "alert_id": 27,
@@ -725,8 +725,8 @@
     "file_unique_authors": 4,
     "file_churn": 375,
     "file_days_since_modified": 285,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 2.0,
+    "file_satd_text": "Formally, Firebird has a (fixed) precision of 4 (100 microseconds), | Note: Firebird 3 has an 'off by increment' bug (fixed in Firebird 4), see"
   },
   {
     "alert_id": 28,
@@ -752,8 +752,8 @@
     "file_unique_authors": 2,
     "file_churn": 92,
     "file_days_since_modified": 332,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 1.0,
+    "file_satd_text": "connect them via union all but that's probably pretty inefficient and would have to happen"
   },
   {
     "alert_id": 29,
@@ -779,8 +779,8 @@
     "file_unique_authors": 2,
     "file_churn": 92,
     "file_days_since_modified": 332,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 1.0,
+    "file_satd_text": "connect them via union all but that's probably pretty inefficient and would have to happen"
   },
   {
     "alert_id": 30,
@@ -806,8 +806,8 @@
     "file_unique_authors": 2,
     "file_churn": 92,
     "file_days_since_modified": 332,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 1.0,
+    "file_satd_text": "connect them via union all but that's probably pretty inefficient and would have to happen"
   },
   {
     "alert_id": 31,
@@ -833,8 +833,8 @@
     "file_unique_authors": 0,
     "file_churn": 0,
     "file_days_since_modified": 0,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 1.0,
+    "file_satd_text": "connect them via union all but that's probably pretty inefficient and would have to happen"
   },
   {
     "alert_id": 32,
@@ -860,8 +860,8 @@
     "file_unique_authors": 0,
     "file_churn": 0,
     "file_days_since_modified": 0,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 1.0,
+    "file_satd_text": "connect them via union all but that's probably pretty inefficient and would have to happen"
   },
   {
     "alert_id": 33,
@@ -887,8 +887,8 @@
     "file_unique_authors": 0,
     "file_churn": 0,
     "file_days_since_modified": 0,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 1.0,
+    "file_satd_text": "connect them via union all but that's probably pretty inefficient and would have to happen"
   },
   {
     "alert_id": 34,
@@ -914,8 +914,8 @@
     "file_unique_authors": 4,
     "file_churn": 181,
     "file_days_since_modified": 107,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 1.0,
+    "file_satd_text": "TODO: does not support MICROSECOND, but on the"
   },
   {
     "alert_id": 35,
@@ -941,8 +941,8 @@
     "file_unique_authors": 1,
     "file_churn": 169,
     "file_days_since_modified": 127,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 2.0,
+    "file_satd_text": "Agroal resolves transaction isolation from the 'nice' name | That logic is similar with what Hibernate does (however with better performance since it's integrated in the pool)"
   },
   {
     "alert_id": 36,
@@ -968,8 +968,8 @@
     "file_unique_authors": 1,
     "file_churn": 147,
     "file_days_since_modified": 108,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 2.0,
+    "file_satd_text": "@author various people | as soon as we obtain a new connection. This maybe isn't ideal,"
   },
   {
     "alert_id": 37,
@@ -995,8 +995,8 @@
     "file_unique_authors": 1,
     "file_churn": 147,
     "file_days_since_modified": 108,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 2.0,
+    "file_satd_text": "@author various people | as soon as we obtain a new connection. This maybe isn't ideal,"
   },
   {
     "alert_id": 38,
@@ -1022,8 +1022,8 @@
     "file_unique_authors": 3,
     "file_churn": 63,
     "file_days_since_modified": 246,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 3.0,
+    "file_satd_text": "TODO: CUBRID also has systime()/sysdate() returning TIME/DATE | TODO: is this really needed? | TODO: would \"from table({0})\" be better?"
   },
   {
     "alert_id": 39,
@@ -1049,8 +1049,8 @@
     "file_unique_authors": 0,
     "file_churn": 0,
     "file_days_since_modified": 0,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 1.0,
+    "file_satd_text": "connect them via union all but that's probably pretty inefficient and would have to happen"
   },
   {
     "alert_id": 40,
@@ -1076,8 +1076,8 @@
     "file_unique_authors": 0,
     "file_churn": 0,
     "file_days_since_modified": 0,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 1.0,
+    "file_satd_text": "connect them via union all but that's probably pretty inefficient and would have to happen"
   },
   {
     "alert_id": 41,
@@ -1211,8 +1211,8 @@
     "file_unique_authors": 2,
     "file_churn": 35,
     "file_days_since_modified": 262,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 2.0,
+    "file_satd_text": "@author Peter DeGregorio (pdegregorio) | TODO: when was 'create unique where not null index' really first introduced?"
   },
   {
     "alert_id": 46,
@@ -1238,8 +1238,8 @@
     "file_unique_authors": 2,
     "file_churn": 35,
     "file_days_since_modified": 262,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 2.0,
+    "file_satd_text": "@author Peter DeGregorio (pdegregorio) | TODO: when was 'create unique where not null index' really first introduced?"
   },
   {
     "alert_id": 47,
@@ -1265,8 +1265,8 @@
     "file_unique_authors": 3,
     "file_churn": 52,
     "file_days_since_modified": 179,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 2.0,
+    "file_satd_text": "TODO: when was 'create unique where not null index' really first introduced? | just on the basis of the DB2 docs, but I currently have no way to test it"
   },
   {
     "alert_id": 48,
@@ -1292,8 +1292,8 @@
     "file_unique_authors": 3,
     "file_churn": 52,
     "file_days_since_modified": 179,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 2.0,
+    "file_satd_text": "TODO: when was 'create unique where not null index' really first introduced? | just on the basis of the DB2 docs, but I currently have no way to test it"
   },
   {
     "alert_id": 49,
@@ -1319,8 +1319,8 @@
     "file_unique_authors": 4,
     "file_churn": 252,
     "file_days_since_modified": 153,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 6.0,
+    "file_satd_text": "emulate the most basic functionality of extract() | type, but it doesn't know how to cast to it. Worse, | With a nice rant: https://blog.jooq.org/2011/10/29/derby-casting-madness-the-sequel/ | TODO: check this! | TODO: check this | It seems at least the row_number function is supported as of 10.4"
   },
   {
     "alert_id": 50,
@@ -1346,7 +1346,7 @@
     "file_unique_authors": 5,
     "file_churn": 72,
     "file_days_since_modified": 39,
-    "file_satd_count": null,
-    "file_satd_text": null
+    "file_satd_count": 3.0,
+    "file_satd_text": "H2 1.4.200 has a bug: https://github.com/h2database/h2database/issues/3184 | functionFactory.everyAny(); //this would work too | H2 requires a very special emulation, because {@code unnest} is pretty much useless,"
   }
 ]

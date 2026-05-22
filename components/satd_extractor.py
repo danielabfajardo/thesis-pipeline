@@ -1,28 +1,3 @@
-"""
-Extracts self-admitted technical debt comments for each source file.
-
-Input:  Project config (GitHub repo, language), sonarqube_issues.csv (file list)
-Output: results/{project_id}/satd_comments.csv
-        results/{project_id}/satd_method.txt
-
-Detection strategy (tried in order):
-1. SATDBailiff (Docker + JGit + MySQL) — Java repositories only. Mines full git history
-   with lifecycle tracking. Produces schema: file_path, satd_count, satd_text, satd_age_days,
-   satd_change_count. For LLM ranking, only satd_count and satd_text are used.
-
-2. satd_detector.jar ML classifier — Python-compatible SATD presence classifier. Fetches file
-   contents via GitHub API and batches all comments through the ML model. Produces schema:
-   file_path, satd_count, satd_text. For LLM ranking, satd_count and satd_text are used.
-
-3. Empty CSV — If neither extractor is available, returns an empty results file.
-
-Design decisions:
-- Only satd_count and satd_text are passed to C3 LLM input to maintain symmetry across
-  Java and Python repositories. SATD lifecycle fields (age, change count) are not used.
-- SATD is extracted at HEAD (current repository state).
-- ML classifier reads comments line-by-line via stdin, batched across files for efficiency.
-"""
-
 import base64
 import logging
 import os
@@ -268,52 +243,31 @@ class SATDExtractor:
     # ------------------------------------------------------------------ #
 
     def run(self) -> str:
-        """Run SATD extraction. Returns the method name that was used."""
+        """Run SATD extraction. Returns the method name that was used.
+
+        The pipeline uses the ML classifier (Ren et al. 2019) for both Java and
+        Python repositories. SATDBailiff (Ren et al. 2021) was previously used for
+        Java repos for its lifecycle tracking, but for long-lived projects with
+        significant historical restructuring (e.g., Hibernate ORM), it reports SATD
+        against historical file paths that no longer intersect with the current
+        SonarQube alert pool. The ML classifier reads current HEAD comments and
+        produces SATD signal aligned with current paths, giving symmetric Java/Python
+        behavior. Only satd_count and satd_text reach the LLM regardless of detection
+        method, so SATDBailiff's extra lifecycle fields were not used downstream.
+        """
         commit_ref = "HEAD"
         file_paths = self._get_file_paths()
 
-        # --- Path 1: SATDBailiff (Docker + JAR) — Java only ---
-        # Most academically rigorous: mines full git history,
-        # giving accurate point-in-time SATD state via lifecycle tracking (Ren et al. 2021).
-        # Requires Java + Docker + GITHUB_TOKEN. Downloads JAR automatically on first run.
-        # NOTE: SATDBailiff is Java-only (thesis design decision); skip for Python repos.
-        if self.language.lower() == "python":
-            log.info("Skipping SATDBailiff — Python repository, SATDBailiff is Java-only (thesis design decision)")
-        else:
-            try:
-                from components.satdbailiff_runner import SATDBailiffRunner
-                runner = SATDBailiffRunner(self.config, self.results_path)
-                if runner.available():
-                    log.info("--- Path 1: SATDBailiff (Docker + JAR) ---")
-                    df = runner.run(commit_ref)
-                    if df is not None and not df.empty:
-                        return self._save(df, f"satdbailiff ({len(df)} files with SATD)")
-                    elif df is not None:
-                        # SATDBailiff completed but found no active SATD at the terminal commit.
-                        # This can mean (a) all SATD was genuinely resolved before HEAD, or
-                        # (b) the Weka classifier's threshold missed current-state SATD.
-                        # Fall through to the ML classifier to ensure C3 has SATD signal.
-                        log.info(
-                            "SATDBailiff found no active SATD — falling through to ML classifier. "
-                            "Check SATD table stats above to distinguish resolved vs. undetected."
-                        )
-            except Exception as e:
-                log.warning(f"SATDBailiff runner error: {e} — falling through to ML classifier")
-
-        # --- Path 2: satd_detector.jar ML classifier ---
-        # High-accuracy NLP detection (Ren et al. 2019) but fetches file contents via
-        # GitHub API rather than walking git history. Requires Java + JAR
-        # in tools/ + GitHub token to fetch file contents.
+        # --- ML classifier (used for all languages) ---
         if self._find_classifier_jar() and shutil.which("java") and file_paths and self.github_token:
             df = self._run_ml_classifier(file_paths, commit_ref)
             if df is not None and not df.empty:
-                # SATDBailiff (Java): 5 columns including lifecycle fields. ML classifier (Python): 3 columns, no lifecycle fields. Asymmetry documented as limitation.
                 return self._save(df, f"satd-detector-jar-ml ({len(df)} files with SATD)")
             elif df is not None:
                 log.info(f"ML classifier output columns: {list(df.columns)}")
                 log.info("ML classifier found no SATD — falling through to empty")
 
-        # --- Path 3: Empty ---
+        # --- Empty fallback ---
         log.warning("No ML classifier available — SATD will be empty for this repo. Verify satd_detector.jar is in tools/")
         empty_df = self._empty_df()
         return self._save(empty_df, "empty (no method available)")

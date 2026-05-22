@@ -6,11 +6,11 @@ rank,file,line,rule,type,message,effort
 5,OracleLegacyDialect.java,525.0,java:S128,CODE_SMELL,"End this switch case with an unconditional break, return or throw statement.",10min
 6,HSQLLegacyDialect.java,384.0,java:S128,CODE_SMELL,"End this switch case with an unconditional break, return or throw statement.",10min
 7,OracleLegacyDialect.java,372.0,java:S3776,CODE_SMELL,Refactor this method to reduce its Cognitive Complexity from 21 to the 15 allowed.,11min
-8,FirebirdSqlAstTranslator.java,292.0,java:S1117,CODE_SMELL,"Rename ""inFunction"" which hides the field declared at line 48.",5min
-9,FirebirdSqlAstTranslator.java,305.0,java:S1117,CODE_SMELL,"Rename ""inFunction"" which hides the field declared at line 48.",5min
-10,H2LegacySqlAstTranslator.java,186.0,java:S1117,CODE_SMELL,"Rename ""renderAsArray"" which hides the field declared at line 48.",5min
-11,H2LegacySqlAstTranslator.java,198.0,java:S1117,CODE_SMELL,"Rename ""renderAsArray"" which hides the field declared at line 48.",5min
-12,H2LegacySqlAstTranslator.java,65.0,java:S4274,CODE_SMELL,Replace this assert with a proper check.,5min
+8,H2LegacySqlAstTranslator.java,65.0,java:S4274,CODE_SMELL,Replace this assert with a proper check.,5min
+9,FirebirdSqlAstTranslator.java,292.0,java:S1117,CODE_SMELL,"Rename ""inFunction"" which hides the field declared at line 48.",5min
+10,FirebirdSqlAstTranslator.java,305.0,java:S1117,CODE_SMELL,"Rename ""inFunction"" which hides the field declared at line 48.",5min
+11,H2LegacySqlAstTranslator.java,186.0,java:S1117,CODE_SMELL,"Rename ""renderAsArray"" which hides the field declared at line 48.",5min
+12,H2LegacySqlAstTranslator.java,198.0,java:S1117,CODE_SMELL,"Rename ""renderAsArray"" which hides the field declared at line 48.",5min
 13,CockroachLegacyDialect.java,226.0,java:S131,CODE_SMELL,Add a default case to this switch.,5min
 14,CockroachLegacyDialect.java,269.0,java:S131,CODE_SMELL,Add a default case to this switch.,5min
 15,CockroachLegacyDialect.java,271.0,java:S131,CODE_SMELL,Add a default case to this switch.,5min
